@@ -11,7 +11,7 @@ class CreepUpgrader extends CreepBase {
     this.tasks = [
       'renew',
       'upgrade',
-      'withdraw'
+      'harvest'
     ];
   }
 

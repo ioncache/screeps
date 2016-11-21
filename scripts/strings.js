@@ -171,10 +171,13 @@ let names = [
 ];
 
 let titles = {
+  banker: 'Hoarder',
   builder: 'Architect',
   fixer: 'Mender',
   guard: 'Protector',
   harvester: 'Reaper',
+  pioneer: 'Conquistador',
+  scout: 'Vanguard',
   upgrader: 'Enhancer'
 };
 

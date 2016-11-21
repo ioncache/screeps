@@ -8,6 +8,7 @@ let builder = require('class.creep.builder');
 let fixer = require('class.creep.fixer');
 let guard = require('class.creep.guard');
 let harvester = require('class.creep.harvester');
+let pioneer = require('class.creep.pioneer');
 let upgrader = require('class.creep.upgrader');
 
 let creepConfig = {
@@ -23,7 +24,7 @@ let creepConfig = {
   },
   builderBasic: {
     class: builder,
-    min: 1,
+    min: 0,
     parts: [WORK, CARRY, MOVE],
     priority: 3
   },
@@ -53,6 +54,16 @@ let creepConfig = {
     min: 0,
     parts: [WORK, CARRY, MOVE],
     priority: 1
+  },
+  pioneer: {
+    class: pioneer,
+    min: 1,
+    priority: 50
+  },
+  scout: {
+    class:  function() {},
+    min: 0,
+    priority: 50
   },
   upgrader: {
     class: upgrader,
@@ -189,7 +200,12 @@ module.exports.loop = function () {
     let creep = Game.creeps[name];
 
     if (!creep.spawning && creepList[name]) {
-      creepList[name].activate();
+      try {
+        creepList[name].activate();
+      }
+      catch (err) {
+        log.error(name, err);
+      }
     }
   }
 

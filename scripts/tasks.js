@@ -115,6 +115,123 @@ function build(creep) {
   return flag;
 }
 
+function claim(creep) {
+  let flag = true;
+
+  let target;
+  if (!creep.memory.target) {
+    let targets = Object.keys(Game.flags).map((flagName) => {
+      if (/^NewController/.test(flagName)) {
+        return Game.flags[flagName];
+      }
+    });
+
+    if (targets) {
+      targets.sort((a, b) => {
+        return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+      });
+
+       target = targets[0].id;
+    }
+  } else {
+    target = creep.memory.target;
+  }
+
+  if (target) {
+    if (!creep.memory.task) {
+      creep.memory.target = target;
+      creep.memory.task = 'claim';
+      creep.say('claiming');
+    }
+
+    if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
+      log.info(`claim: moving to new controller`);
+      let moveResult = creep.moveTo(Game.flags[target]);
+      switch (moveResult) {
+        case ERR_NO_PATH:
+          log.info(`claim: cannot find path to claim flag`);
+          creep.memory.post = null;
+          flag = false;
+          break;
+        case ERR_TIRED:
+          log.info(`claim: creep is tired during move, will tray again later`);
+          flag = true;
+          break;
+        case OK:
+          flag = true;
+          break;
+        default:
+          log.info(`claim: unknown response during move to post '${moveResult}'`);
+          flag = true;
+      }
+    } else {
+      if (creep.room.controller.owner == 'ioncache') {
+        log.info(`claim: I already own the controller in this room`);
+        Game.flags[creep.memory.target].remove();
+        creep.memory.target = null;
+        creep.memory.task = null;
+        flag = false;
+      } else if (!creep.room.controller.reservation) {
+        let reserveController = creep.reserveController(creep.room.controller);
+      } else {
+        let claimResult = creep.claimController(creep.room.controller);
+        switch (claimResult) {
+          case ERR_FULL:
+            log.info(`claim: already own 3 controllers in novice area, removing target flag ${creep.memory.target}`);
+            Game.flags[creep.memory.target].remove();
+            creep.memory.target = null;
+            creep.memory.task = null;
+            flag = false;
+            break;
+          case ERR_INVALID_TARGET:
+            log.info(`claim: cannot claim this controller`);
+            creep.memory.target = null;
+            creep.memory.task = null;
+            flag = false;
+            break;
+          case ERR_NOT_IN_RANGE:
+            log.info(`claim: moving to controller`);
+            let moveResult = creep.moveTo(creep.room.controller);
+            switch (moveResult) {
+              case ERR_NO_PATH:
+                log.info(`claim: cannot find path to controller`);
+                creep.memory.target = null;
+                flag = false;
+                break;
+              case ERR_TIRED:
+                log.info(`claim: creep is tired during move, will tray again later`);
+                flag = true;
+                break;
+              case OK:
+                flag = true;
+                break;
+              default:
+                log.info(`claim: unknown response during move to controller`);
+                flag = true;
+            }
+            break;
+          case OK:
+            log.info(`claim: controller claimed huzzah`);
+            Game.flags[creep.memory.target].remove();
+            creep.memory.target = null;
+            creep.memory.task = null;
+            flag = true;
+            break;
+          default:
+            log.info(`claim: unknown response '${claimResult}'`);
+            flag = true;
+        }
+      }
+    }
+  }  else {
+    creep.memory.target = null;
+    creep.memory.task = null;
+    flag = false;
+  }
+
+  return flag;
+}
+
 function fix(creep) {
   let flag = true;
 
@@ -486,13 +603,15 @@ function renew(creep) {
           break;
         case ERR_NOT_ENOUGH_ENERGY:
           log.info(`renew: spawn out of energy`);
-          if (creep.ticksToLive > 200) { // move on to other things
+          if (creep.ticksToLive > 350) { // move on to other things
             creep.memory.target = null;
             creep.memory.task = null;
             flag = false;
-          } else { // stick it out and wit for energy
+          } else { // stick it out and wait for energy
             // transfer any held energy so we can renew
-            let result = creep.transfer(spawn, RESOURCE_ENERGY);
+            if (creep.carry.energy > 0) {
+              let result = creep.transfer(spawn, RESOURCE_ENERGY);
+            }
             flag = true;
           }
           break;
@@ -767,6 +886,7 @@ function upgrade(creep) {
 
 module.exports = {
   build: build,
+  claim: claim,
   fix: fix,
   guard:  guard,
   harvest: harvest,
