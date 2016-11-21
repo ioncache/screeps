@@ -18,7 +18,7 @@ let creepConfig = {
   },
   builder: {
     class: builder,
-    min: 2,
+    min: 4,
     priority: 3
   },
   builderBasic: {
@@ -29,7 +29,7 @@ let creepConfig = {
   },
   fixer: {
     class: fixer,
-    min: 2,
+    min: 4,
     priority: 4
   },
   fixerBasic: {
