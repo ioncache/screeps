@@ -9,6 +9,7 @@ class CreepHarvester extends CreepBase {
   constructor(role = 'harvester', parts = [WORK, WORK, CARRY, CARRY, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
+      'renew',
       'pickup',
       'harvest',
       'transfer'

@@ -6,7 +6,7 @@ let log = require('logger');
 helpers.setLogger(log);
 
 class CreepGuard extends CreepBase {
-  constructor(role = 'guard', parts = [RANGED_ATTACK, MOVE, TOUGH]) {
+  constructor(role = 'guard', parts = [TOUGH, MOVE, RANGED_ATTACK]) {
     super(role, parts);
     this.tasks = [
       'guard',

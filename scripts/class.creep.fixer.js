@@ -10,6 +10,7 @@ class CreepFixer extends CreepBase {
     super(role, parts);
 
     this.tasks = [
+      'renew',
       'fix',
       'harvest'
     ];

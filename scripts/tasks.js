@@ -241,7 +241,7 @@ function guard(creep) {
     if (Game.flags[post]) {
       if (creep.pos.getRangeTo(Game.flags[post]) > 0) {
         log.info(`guard: moving to guard post`);
-        let moveResult = creep.moveTo(target);
+        let moveResult = creep.moveTo(Game.flags[post]);
         switch (moveResult) {
           case ERR_NO_PATH:
             log.info(`guard: cannot find path to guard post`);
@@ -452,6 +452,66 @@ function pickup(creep) {
   return flag;
 }
 
+function renew(creep) {
+  let flag = true;
+
+  if (creep.memory.task == 'renew' || creep.ticksToLive < 200) {
+    if (!creep.memory.task == 'renew') {
+      creep.memory.task = 'renew';
+      creep.say('renewing');
+    }
+
+    let spawn = Game.getObjectById(creep.memory.target);
+
+    if (!spawn || spawn.structureType != 'spawn') {
+      spawn = helpers.getTarget(creep, 'spawn');
+      creep.memory.target = spawn;
+      spawn = Game.getObjectById(creep.memory.target)
+    }
+
+    if (spawn) {
+      let result = spawn.renewCreep(creep);
+
+      switch (result) {
+        case ERR_NOT_IN_RANGE:
+          log.info(`renew: moving to spawn to renew`);
+          creep.moveTo(spawn);
+          flag = true;
+          break;
+        case ERR_FULL:
+          log.info(`renew: all filled up`);
+          creep.memory.target = null;
+          creep.memory.task = null;
+          flag = false;
+          break;
+        case ERR_NOT_ENOUGH_ENERGY:
+          log.info(`renew: spawn out of energy`);
+          if (creep.ticksToLive > 200) { // move on to other things
+            creep.memory.target = null;
+            creep.memory.task = null;
+            flag = false;
+          } else { // stick it out and wit for energy
+            // transfer any held energy so we can renew
+            let result = creep.transfer(spawn, RESOURCE_ENERGY);
+            flag = true;
+          }
+          break;
+        case OK:
+          log.info(`renew: renewing`);
+          flag = true;
+        default:
+          flag = true;
+      }
+    }
+  } else {
+    creep.memory.target = null;
+    creep.memory.task = 0;
+    flag = false;
+  }
+
+  return flag;
+}
+
 function transfer(creep) {
   let flag = true;
 
@@ -468,7 +528,7 @@ function transfer(creep) {
     }
 
     if (!target) {
-      target = helpers.getTarget(creep, 'storage');
+      target = helpers.getTarget(creep, 'energyHolders');
     }
 
     // if there is no target at this point, no valid target was found
@@ -678,6 +738,7 @@ function upgrade(creep) {
             break;
           case OK:
             flag = true;
+            break;
           default:
             log.info(`harvest: unknown response during move to controller '${moveResult}'`);
             flag = true;
@@ -712,6 +773,7 @@ module.exports = {
   motivate: motivate,
   patrol: patrol,
   pickup: pickup,
+  renew: renew,
   transfer: transfer,
   withdraw: withdraw,
   upgrade:  upgrade

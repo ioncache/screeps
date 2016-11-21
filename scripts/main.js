@@ -3,6 +3,7 @@
 let helpers = require('helpers');
 let log = require('logger');
 
+let banker = require('class.creep.banker');
 let builder = require('class.creep.builder');
 let fixer = require('class.creep.fixer');
 let guard = require('class.creep.guard');
@@ -10,20 +11,25 @@ let harvester = require('class.creep.harvester');
 let upgrader = require('class.creep.upgrader');
 
 let creepConfig = {
+  banker: {
+    class: banker,
+    min: 0,
+    priority: 7
+  },
   builder: {
     class: builder,
-    min: 4,
+    min: 2,
     priority: 3
   },
   builderBasic: {
     class: builder,
-    min: 0,
+    min: 1,
     parts: [WORK, CARRY, MOVE],
     priority: 3
   },
   fixer: {
     class: fixer,
-    min: 4,
+    min: 2,
     priority: 4
   },
   fixerBasic: {
@@ -88,21 +94,6 @@ module.exports.loop = function () {
     }
   }
 
-  let guardCount = 0;
-  for (let name in Game.rooms) {
-    log.info(`Room "${name}" has ${Game.rooms[name].energyAvailable} energy`);
-
-    // determine the correct number of guards to spawn based on guard posts
-    // TODO: fix up logic to properly support multiple rooms
-    let guardPosts = Game.rooms[name].find(FIND_FLAGS, {
-      filter: (post) => {
-        return /^GuardPost/.test(post.name);
-      }
-    });
-    guardCount += guardPosts.length;
-  }
-  creepConfig.guard.min = guardCount;
-
   // TODO: move out tower logic elsewhere probably
   let tower = Game.getObjectById('TOWER_ID');
   if (tower) {
@@ -129,11 +120,17 @@ module.exports.loop = function () {
   for (let role of roles) {
     let creeps = _.filter(Game.creeps, (creep) => { return creep.memory.role == role; });
     log.info(`Current '${role}' count: ${creeps.length} / ${creepConfig[role].min}`);
+    creepConfig[role].currentCount = creeps.length;
 
     if (creeps.length < creepConfig[role].min) {
       // if all creeps of a type are dead, make some simple
       // ones to get things moving again
-      if (creeps.length == 0 && role !== 'guard') {
+      let basicCreeps = _.filter(Game.creeps, (creep) => { return creep.memory.role == `${role}Basic`; });
+      if (
+        ['builder', 'fixer', 'harvester', 'upgrader'].includes(role) &&
+        creeps.length == 0 &&
+        basicCreeps.length == 0
+      )  {
         role = `${role}Basic`;
       }
 
@@ -157,6 +154,31 @@ module.exports.loop = function () {
           log.info(`Spawning new '${role}': ${newName}`);
       }
     }
+  }
+
+  // only begin spawning guards if current population is high enough
+  if (
+    creepConfig.fixer.currentCount >= Math.ceil(creepConfig.fixer.min / 2) &&
+    creepConfig.builder.currentCount >= Math.ceil(creepConfig.builder.min / 2) &&
+    creepConfig.harvester.currentCount >= Math.ceil(creepConfig.harvester.min / 2) &&
+    creepConfig.upgrader.currentCount >= Math.ceil(creepConfig.upgrader.min / 2)
+  ) {
+    let guardCount = 0;
+    for (let name in Game.rooms) {
+      log.info(`Room "${name}" has ${Game.rooms[name].energyAvailable} energy`);
+
+      // determine the correct number of guards to spawn based on guard posts
+      // TODO: fix up logic to properly support multiple rooms
+      let guardPosts = Game.rooms[name].find(FIND_FLAGS, {
+        filter: (post) => {
+          return /^GuardPost/.test(post.name);
+        }
+      });
+      guardCount += guardPosts.length;
+    }
+    creepConfig.guard.min = guardCount;
+  } else {
+    creepConfig.guard.min = 0;
   }
 
   log.info(`Total creeps: ${Object.keys(Game.creeps).length}`);

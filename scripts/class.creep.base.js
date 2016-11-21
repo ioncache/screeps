@@ -26,27 +26,24 @@ class CreepBase {
       tasks.motivate(creep);
     }
 
-    // self renewal always takes precedence over other creep tasks
-    if (this.isDying() || creep.memory.renewing) {
-      this.renew();
-    } else {
-      let result;
-      // if the creep already has an assigned task, do that first
-      if (creep.memory.task) {
-        result = tasks[creep.memory.task](creep);
-      }
+    let result;
+    // if the creep already has an assigned task, do that first
+    if (creep.memory.task) {
+      result = tasks[creep.memory.task](creep);
+    }
 
-      // continue with other tasks if original task allows
-      if (!result) {
-        for (let task of this.tasks) {
-          let result = tasks[task](creep);
+    // continue with other tasks if original task allows
+    if (!result) {
+      for (let task of this.tasks) {
+        console.log('running task', task)
+        let result = tasks[task](creep);
+        console.log('result from task', result)
 
-          // if the task returns true, we are done this task loop
-          // some tasks will return false if they cannot be done
-          // some tasks will return false if other tasks can be done afterwards
-          if (result) {
-            break;
-          }
+        // if the task returns true, we are done this task loop
+        // some tasks will return false if they cannot be done
+        // some tasks will return false if other tasks can be done afterwards
+        if (result) {
+          break;
         }
       }
     }

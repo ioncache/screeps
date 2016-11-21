@@ -58,6 +58,30 @@ function getTarget(creep, type, config = {}) {
         target = target.id;
       }
       break;
+    case 'energyHolders':
+      let structures = creep.room.find(
+        FIND_STRUCTURES,
+        {
+          filter: (structure) => {
+            return (
+              structure.energyCapacity > 0 &&
+              structure.energy < structure.energyCapacity
+            );
+          }
+        }
+      );
+
+      structures.sort((a, b) => {
+        return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+      });
+
+      for (let potentialTarget of structures) {
+        target = potentialTarget;
+        log.info(`setting target to structure '${target}'`);
+        target = target.id;
+        break;
+      }
+      break;
     case 'energyStore':
       let energyStores = creep.room.find(
         FIND_STRUCTURES,
@@ -66,8 +90,7 @@ function getTarget(creep, type, config = {}) {
             return (
               [
                 STRUCTURE_EXTENSION,
-                STRUCTURE_SPAWN,
-                STRUCTURE_STORAGE
+                STRUCTURE_SPAWN
               ].includes(store.structureType) &&
               store.energy > 1
             );
@@ -189,11 +212,12 @@ function getTarget(creep, type, config = {}) {
 
       break;
     case 'storage':
-      let structures = creep.room.find(
+      let storages = creep.room.find(
         FIND_STRUCTURES,
         {
           filter: (structure) => {
             return (
+              structure.type == STRUCTURE_STORAGE &&
               structure.energyCapacity > 0 &&
               structure.energy < structure.energyCapacity
             );
@@ -201,18 +225,15 @@ function getTarget(creep, type, config = {}) {
         }
       );
 
-      structures.sort((a, b) => {
-        return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-      });
+      if (storages.length) {
+        storages.sort((a, b) => {
+          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+        });
 
-      for (let potentialTarget of structures) {
-        if (potentialTarget.energy < potentialTarget.energyCapacity) {
-          target = potentialTarget;
-          log.info(`setting target to structure '${target}'`);
-          target = target.id;
-          break;
-        }
+        log.info(`setting target to storage '${storages[0]}'`);
+        target = storages[0].id;
       }
+
       break;
     default:
   }
@@ -236,12 +257,12 @@ function moveAwayFromSource(creep, sourceId) {
 }
 
 function generateName(role = 'harvester') {
-  let title = strings.titles[role] || strings.titles.harvester;
+  let title = strings.titles[role] || 'NoNameDude';
 
   let currentNames = Object.keys(Game.creeps);
   let name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
   while (currentNames.includes(name)) {
-    name = `prefixes[role]_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
+    name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
   }
 
   return name;

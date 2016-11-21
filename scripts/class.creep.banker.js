@@ -5,25 +5,25 @@ let helpers = require('helpers');
 let log = require('logger');
 helpers.setLogger(log);
 
-class CreepUpgrader extends CreepBase {
-  constructor(role = 'upgrader', parts = [WORK, WORK, CARRY, MOVE, MOVE]) {
+class CreepBanker extends CreepBase {
+  constructor(role = 'harvester', parts = [WORK, WORK, CARRY, CARRY, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
       'renew',
-      'upgrade',
-      'withdraw'
+      'harvest',
+      'deposit'
     ];
   }
 
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `man I love upgrading controllers`);
+    log.start(creep.name, `must save all the energy`);
 
     super.activate();
 
-    log.finish(`that controller is so, so upgraded`);
+    log.finish(`hope no one takes it from my storage`);
   }
 }
 
-module.exports = CreepUpgrader;
+module.exports = CreepBanker;
