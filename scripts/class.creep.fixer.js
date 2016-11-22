@@ -3,7 +3,6 @@
 let CreepBase = require('class.creep.base');
 let helpers = require('helpers');
 let log = require('logger');
-helpers.setLogger(log);
 
 class CreepFixer extends CreepBase {
   constructor(role = 'fixer', parts = [WORK, CARRY, CARRY, MOVE, MOVE]) {
@@ -12,7 +11,7 @@ class CreepFixer extends CreepBase {
     this.tasks = [
       'renew',
       'fix',
-      'harvest'
+      'getWorkEnergy'
     ];
   }
 

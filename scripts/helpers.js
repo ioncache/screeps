@@ -3,10 +3,6 @@
 let log = require('logger');
 let strings = require('strings');
 
-function setLogger(logger) {
-  log = logger;
-}
-
 function findCoordNearSpawn(creep) {
   let target;
 
@@ -38,7 +34,7 @@ function getRandomInt(min, max) {
 
 // returns an id of a target so that it can be stored in memory
 // or returns null if no target can be found
-function getTarget(creep, type, config = {}) {
+function getTarget(creep, type, opts = {}) {
   let target = null;
 
   switch (type) {
@@ -53,57 +49,103 @@ function getTarget(creep, type, config = {}) {
       break;
     case 'droppedEnergy':
       let droppedEnergy = creep.room.find(FIND_DROPPED_ENERGY);
-      if (droppedEnergy.length > 0) {
-        target = droppedEnergy[0];
+      if (droppedEnergy.length) {
+        target = _.min(droppedEnergy, (i) => {
+          return creep.pos.getRangeTo(i);
+        });
         target = target.id;
       }
       break;
-    case 'energyHolders':
-      let structures = creep.room.find(
+    case 'energyHolder':
+      let energyHolders;
+
+      energyHolders = creep.room.find(
         FIND_STRUCTURES,
         {
           filter: (structure) => {
-            return (
-              structure.energyCapacity > 0 &&
-              structure.energy < structure.energyCapacity
-            );
+            if (opts.types) {
+              return opts.types.includes(structure.structureType);
+            } else {
+              return (
+                structure.structureType == STRUCTURE_SPAWN &&
+                structure.energy < structure.energyCapacity
+              );
+            }
           }
         }
       );
 
-      structures.sort((a, b) => {
-        return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-      });
-
-      for (let potentialTarget of structures) {
-        target = potentialTarget;
-        log.info(`setting target to structure '${target}'`);
+      if (energyHolders.length) {
+        target = _.min(energyHolders, (i) => {
+          return creep.pos.getRangeTo(i);
+        });
         target = target.id;
-        break;
+      } else {
+        energyHolders = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: (structure) => {
+              if (opts.types) {
+                return opts.types.includes(structure.structureType);
+              } else {
+                return (
+                  structure.energyCapacity > 0 &&
+                  structure.energy < structure.energyCapacity
+                );
+              }
+            }
+          }
+        );
+
+        if (energyHolders.length) {
+          target = _.min(energyHolders, (i) => {
+            return creep.pos.getRangeTo(i);
+          });
+          target = target.id;
+        }
+
+        if (!target && !opts.types) {
+          target = getTarget(creep, 'storage');
+        }
       }
+
       break;
     case 'energyStore':
-      let energyStores = creep.room.find(
-        FIND_STRUCTURES,
-        {
-          filter: (store) => {
-            return (
-              [
-                STRUCTURE_EXTENSION,
-                STRUCTURE_SPAWN
-              ].includes(store.structureType) &&
-              store.energy > 1
-            );
+      let energyStores;
+      if (opts.filter) {
+        energyStores = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: opts.filter
           }
-        }
-      );
+        );
+      } else {
+        energyStores = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: (store) => {
+              return (
+                [
+                  STRUCTURE_CONTAINER,
+                  STRUCTURE_EXTENSION,
+                  STRUCTURE_SPAWN,
+                  STRUCTURE_STORAGE
+                ].includes(store.structureType) &&
+                (
+                  store.energy > 1 ||
+                  ( store.store && store.store[RESOURCE_ENERGY] > 1 )
+                )
+              );
+            }
+          }
+        );
+      }
 
       if (energyStores.length) {
-        energyStores.sort((a, b) => {
-          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+        target = _.min(energyStores, (i) => {
+          return creep.pos.getRangeTo(i);
         });
-
-        target = energyStores[0].id;
+        target = target.id;
       }
 
       break;
@@ -112,9 +154,9 @@ function getTarget(creep, type, config = {}) {
         FIND_STRUCTURES,
         {
           filter: (structure) => {
-            config.maxHits = config.maxHits || {};
-            if (config.maxHits[structure.structureType]) {
-              return structure.hits < config.maxHits[structure.structureType];
+            opts.maxHits = opts.maxHits || {};
+            if (opts.maxHits[structure.structureType]) {
+              return structure.hits < opts.maxHits[structure.structureType];
             } else {
               return structure.hits < structure.hitsMax;
             }
@@ -126,7 +168,6 @@ function getTarget(creep, type, config = {}) {
         target = _.min(fixables, (i) => {
           return creep.pos.getRangeTo(i);
         });
-
         target = target.id;
       }
 
@@ -157,43 +198,48 @@ function getTarget(creep, type, config = {}) {
 
       break;
     case 'source':
-      if (creep.carry.energy < creep.carryCapacity) {
-          let sources = creep.room.find(FIND_SOURCES);
+        let sources = creep.room.find(FIND_SOURCES);
 
-          if (sources.length > 0) {
-            let sourceIndex = 0;
+        if (sources.length > 0) {
 
-            // ensure that creeps evenly distribute themselves to sources
-            // TODO: make a source queue manager to assign sources to creeps
-            if (sources.length > 1) {
-              let targetedSources = {};
-              for (let i = 0; i < sources.length; i++) {
-                targetedSources[sources[i].id] = {
-                  count: 0,
-                  index: i
-                }
-              }
-
-              for (let creepName in Game.creeps) {
-                let creep = Game.creeps[creepName];
-
-                if (_.map(sources, 'id').includes(creep.memory.target)) {
-                  targetedSources[creep.memory.target].count += 1;
-                }
-              }
-
-              let targetSource = _.min(_.map(sources, 'id'), (sourceId) => {
-                return targetedSources[sourceId].count;
-              });
-
-              sourceIndex = targetedSources[targetSource].index;
-            }
-
-            target = sources[sourceIndex];
-            log.info(`setting target to source '${target}'`);
+          if (opts.nearest) {
+            target = _.min(sources, (i) => {
+              return creep.pos.getRangeTo(i);
+            });
             target = target.id;
+          } else {
+              let sourceIndex = 0;
+
+              // ensure that creeps evenly distribute themselves to sources
+              // TODO: make a source queue manager to assign sources to creeps
+              if (sources.length > 1) {
+                let targetedSources = {};
+                for (let i = 0; i < sources.length; i++) {
+                  targetedSources[sources[i].id] = {
+                    count: 0,
+                    index: i
+                  }
+                }
+
+                for (let creepName in Game.creeps) {
+                  let creep = Game.creeps[creepName];
+
+                  if (_.map(sources, 'id').includes(creep.memory.target)) {
+                    targetedSources[creep.memory.target].count += 1;
+                  }
+                }
+
+                let targetSource = _.min(_.map(sources, 'id'), (sourceId) => {
+                  return targetedSources[sourceId].count;
+                });
+
+                sourceIndex = targetedSources[targetSource].index;
+              }
+
+              target = sources[sourceIndex];
+              target = target.id;
+            }
           }
-      }
       break;
     case 'spawn':
       let spawns = creep.room.find(FIND_MY_SPAWNS);
@@ -212,32 +258,68 @@ function getTarget(creep, type, config = {}) {
 
       break;
     case 'storage':
-      let storages = creep.room.find(
-        FIND_STRUCTURES,
-        {
-          filter: (structure) => {
-            return (
-              structure.type == STRUCTURE_STORAGE &&
-              structure.energyCapacity > 0 &&
-              structure.energy < structure.energyCapacity
-            );
+      let storages;
+      if (opts.filter) {
+        storages = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: opts.filter
           }
-        }
-      );
+        );
+      } else {
+        storages = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: (storage) => {
+              return (
+                storage.structureType == STRUCTURE_STORAGE &&
+                storage.storeCapacity > 0 &&
+                _.sum(storage.store) < storage.storeCapacity
+              );
+            }
+          }
+        );
+      }
 
       if (storages.length) {
-        storages.sort((a, b) => {
-          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+        target = _.min(storages, (i) => {
+          return creep.pos.getRangeTo(i);
         });
+        target = target.id;
+      }
 
-        log.info(`setting target to storage '${storages[0]}'`);
-        target = storages[0].id;
+      break;
+    case 'staticHarvestLocation':
+      let staticHarvestLocations = creep.room.find(FIND_FLAGS, {
+        filter: (location) => {
+          return /^StaticHarvest/.test(location.name);
+        }
+      });
+
+      let staticHarvesters = creep.room.find(FIND_MY_CREEPS, {
+        filter: (found) => {
+          return found.memory.role == 'staticHarvester';
+        }
+      });
+
+      let alreadyTaken = _.map(staticHarvesters, (harvester) => {
+        return harvester.memory.staticTarget;
+      });
+
+      for (let location of staticHarvestLocations) {
+        if (!alreadyTaken.includes(location.name)) {
+          target = location.name;
+          break;
+        }
       }
 
       break;
     default:
   }
 
+  if (target) {
+    log.info(`setting target to '${target}'`);
+  }
   return target;
 }
 
@@ -272,6 +354,5 @@ module.exports = {
   generateName: generateName,
   getRandomInt: getRandomInt,
   getTarget: getTarget,
-  moveAwayFromSource: moveAwayFromSource,
-  setLogger: setLogger
+  moveAwayFromSource: moveAwayFromSource
 };

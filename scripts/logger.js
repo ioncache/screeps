@@ -5,7 +5,7 @@ let logId = null;
 
 const DEBUG = true;
 
-function log(message) {
+function base(message) {
   if (DEBUG) {
     console.log(started ? `  ${message}` : message);
   }
@@ -20,28 +20,34 @@ function start(id, message) {
 }
 
 function finish(message) {
-  started = false;
   if (DEBUG) {
     console.log(`***** Finish Logging ${logId}: ${message} *****\n\n`);
   }
+  started = false;
+  logId = null;
+}
+
+function log(message) {
+  console.log(message);
 }
 
 function info(message) {
-  log(`${message}`);
+  base(`${message}`);
 }
 
 function error(message) {
-  log(`ERROR: ${message}`);
+  base(`ERROR: ${message}`);
 }
 
 function warn(message) {
-  log(`WARN: ${message}`);
+  base(`WARN: ${message}`);
 }
 
 module.exports = {
     error: error,
     finish: finish,
     info: info,
+    log: log,
     warn: warn,
     start: start
 };

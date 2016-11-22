@@ -35,9 +35,7 @@ class CreepBase {
     // continue with other tasks if original task allows
     if (!result) {
       for (let task of this.tasks) {
-        console.log('running task', task)
         let result = tasks[task](creep);
-        console.log('result from task', result)
 
         // if the task returns true, we are done this task loop
         // some tasks will return false if they cannot be done

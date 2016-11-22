@@ -173,11 +173,13 @@ let names = [
 let titles = {
   banker: 'Hoarder',
   builder: 'Architect',
+  courier: 'Dispatcher',
   fixer: 'Mender',
   guard: 'Protector',
   harvester: 'Reaper',
   pioneer: 'Conquistador',
   scout: 'Vanguard',
+  staticHarvester: 'Stockpiler',
   upgrader: 'Enhancer'
 };
 

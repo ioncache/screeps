@@ -3,15 +3,14 @@
 let CreepBase = require('class.creep.base');
 let helpers = require('helpers');
 let log = require('logger');
-helpers.setLogger(log);
 
 class CreepUpgrader extends CreepBase {
-  constructor(role = 'upgrader', parts = [WORK, WORK, CARRY, MOVE, MOVE]) {
+  constructor(role = 'upgrader', parts = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
       'renew',
       'upgrade',
-      'harvest'
+      'getWorkEnergy'
     ];
   }
 

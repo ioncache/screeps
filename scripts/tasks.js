@@ -8,6 +8,7 @@ the task allows for other actions to be taken afterwards
 
 */
 
+let actions = require('taskActions');
 let helpers = require('helpers');
 let log = require('logger');
 let strings = require('strings');
@@ -60,25 +61,7 @@ function build(creep) {
           flag = false;
           break;
         case ERR_NOT_IN_RANGE:
-          log.info(`build: moving to buildable '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`build: cannot find path to buildable`);
-              creep.memory.target = null;
-              flag = false;
-              break;
-            case ERR_TIRED:
-              log.info(`build: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`build: unknown response during move to buildable '${moveResult}'`);
-              flag = true;
-          }
+          flag = actions.moveTo(creep, target, 'build');
           break;
         case OK:
           log.info(`build: constructing`);
@@ -131,7 +114,9 @@ function claim(creep) {
         return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
       });
 
-       target = targets[0].id;
+       target = targets[0].name;
+    } else {
+      log.info(`no valid controller flag found`);
     }
   } else {
     target = creep.memory.target;
@@ -145,25 +130,7 @@ function claim(creep) {
     }
 
     if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
-      log.info(`claim: moving to new controller`);
-      let moveResult = creep.moveTo(Game.flags[target]);
-      switch (moveResult) {
-        case ERR_NO_PATH:
-          log.info(`claim: cannot find path to claim flag`);
-          creep.memory.post = null;
-          flag = false;
-          break;
-        case ERR_TIRED:
-          log.info(`claim: creep is tired during move, will tray again later`);
-          flag = true;
-          break;
-        case OK:
-          flag = true;
-          break;
-        default:
-          log.info(`claim: unknown response during move to post '${moveResult}'`);
-          flag = true;
-      }
+      flag = actions.moveTo(creep, Game.flags[target], 'claim');
     } else {
       if (creep.room.controller.owner == 'ioncache') {
         log.info(`claim: I already own the controller in this room`);
@@ -171,9 +138,8 @@ function claim(creep) {
         creep.memory.target = null;
         creep.memory.task = null;
         flag = false;
-      } else if (!creep.room.controller.reservation) {
-        let reserveController = creep.reserveController(creep.room.controller);
-      } else {
+      } else if (Object.keys(Game.rooms).length < Game.gcl) {
+        log.info(`claim: attempting to claim ${creep.memory.target}`);
         let claimResult = creep.claimController(creep.room.controller);
         switch (claimResult) {
           case ERR_FULL:
@@ -183,6 +149,10 @@ function claim(creep) {
             creep.memory.task = null;
             flag = false;
             break;
+          case ERR_GCL_NOT_ENOUGH:
+            log.info(`claim: global control level not high enough`);
+            flag = true;
+            break;
           case ERR_INVALID_TARGET:
             log.info(`claim: cannot claim this controller`);
             creep.memory.target = null;
@@ -190,25 +160,7 @@ function claim(creep) {
             flag = false;
             break;
           case ERR_NOT_IN_RANGE:
-            log.info(`claim: moving to controller`);
-            let moveResult = creep.moveTo(creep.room.controller);
-            switch (moveResult) {
-              case ERR_NO_PATH:
-                log.info(`claim: cannot find path to controller`);
-                creep.memory.target = null;
-                flag = false;
-                break;
-              case ERR_TIRED:
-                log.info(`claim: creep is tired during move, will tray again later`);
-                flag = true;
-                break;
-              case OK:
-                flag = true;
-                break;
-              default:
-                log.info(`claim: unknown response during move to controller`);
-                flag = true;
-            }
+            flag = actions.moveTo(creep, creep.room.controller, 'claim');
             break;
           case OK:
             log.info(`claim: controller claimed huzzah`);
@@ -221,12 +173,66 @@ function claim(creep) {
             log.info(`claim: unknown response '${claimResult}'`);
             flag = true;
         }
+      } else if (!creep.room.controller.reservation || creep.room.controller.username == 'ioncache') {
+        log.info(`claim: reserving new controller`);
+        let reserveController = creep.reserveController(creep.room.controller);
+        flag = true;
+      } else {
+        log.info(`claim: current gcl not high enough to claim new room`);
+        flag = true;
       }
     }
   }  else {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
+  }
+
+  return flag;
+}
+
+function fillup(creep) {
+  let flag;
+
+  if (creep.carry.energy == creep.carry.carryCapacity) {
+    creep.memory.container = null;
+    creep.memory.task = null;
+    flag = false;
+  } else {
+    let container = creep.memory.container;
+    if (!container) {
+      let containers = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+            [
+              STRUCTURE_CONTAINER
+            ].includes(structure.structureType) &&
+            structure.store[RESOURCE_ENERGY] > 1
+          );
+        }
+      });
+
+      container = _.max(containers, (i) => {
+        return i.store[RESOURCE_ENERGY];
+      });
+      if (container) {
+        container = container.id;
+      }
+    }
+
+    if (!container) {
+      log.info('fillup: no valid containers found');
+      creep.memory.container = null;
+      creep.memory.task = null;
+      flag = false;
+    } else {
+      creep.memory.target = container;
+
+      container = Game.getObjectById(creep.memory.target);
+
+      flag = actions.withdraw(creep, container, 'fillup');
+      creep.memory.container = null;
+    }
   }
 
   return flag;
@@ -285,25 +291,7 @@ function fix(creep) {
           flag = false;
           break;
         case ERR_NOT_IN_RANGE:
-          log.info(`fix: moving to fixable '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`fix: cannot find path to fixable`);
-              creep.memory.target = null;
-              flag = false;
-              break;
-            case ERR_TIRED:
-              log.info(`fix: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`fix: unknown response during move to buildable '${moveResult}'`);
-              flag = true;
-          }
+          flag = actions.moveTo(creep, target, 'fix');
           break;
         case OK:
           log.info(`fix: fixing`);
@@ -316,8 +304,10 @@ function fix(creep) {
             target.hits > maxHits[target.structureType]
           ) {
             creep.memory.target = null;
+            creep.memory.task = null;
           } else if (target.hits == target.hitsMax) { // if strucre full health, remove target
             creep.memory.target = null;
+            creep.memory.task = null;
           }
           flag = true;
           break;
@@ -328,6 +318,31 @@ function fix(creep) {
           flag = true;
       }
     }
+  }
+
+  return flag;
+}
+
+function getWorkEnergy(creep) {
+  let flag;
+
+  let staticHarvesters = Object.keys(Game.creeps).filter((name) => {
+    return Game.creeps[name].memory.role == 'staticHarvester';
+  });
+
+  let harvesters = Object.keys(Game.creeps).filter((name) => {
+    return ['harvester', 'basicHarvester'].includes(Game.creeps[name].memory.role);
+  });
+
+  let sources = creep.room.find(FIND_SOURCES);
+
+  if (
+    staticHarvesters.length >= sources.length ||
+    harvesters.length >= (sources.length * 4)
+  ) {
+    return withdraw(creep);
+  } else {
+    return harvest(creep);
   }
 
   return flag;
@@ -357,25 +372,7 @@ function guard(creep) {
 
     if (Game.flags[post]) {
       if (creep.pos.getRangeTo(Game.flags[post]) > 0) {
-        log.info(`guard: moving to guard post`);
-        let moveResult = creep.moveTo(Game.flags[post]);
-        switch (moveResult) {
-          case ERR_NO_PATH:
-            log.info(`guard: cannot find path to guard post`);
-            creep.memory.post = null;
-            flag = false;
-            break;
-          case ERR_TIRED:
-            log.info(`guard: creep is tired during move, will tray again later`);
-            flag = true;
-            break;
-          case OK:
-            flag = true;
-            break;
-          default:
-            log.info(`guard: unknown response during move to post '${moveResult}'`);
-            flag = true;
-        }
+        flag = actions.moveTo(creep, Game.flags[post], 'guard');
       } else {
         log.info(`guard: guarding ${post}`);
         if (helpers.getRandomInt(1, 100) > 90) {
@@ -415,6 +412,7 @@ function harvest(creep) {
 
     // if there is no target at this point, no valid target was found
     if (!target) {
+      log.info('harvest: no valid harvest source could be found');
       creep.memory.target = null;
       flag = false;
     } else {
@@ -426,49 +424,7 @@ function harvest(creep) {
 
       target = Game.getObjectById(target);
 
-      let result = creep.harvest(target);
-
-      switch (result) {
-        case ERR_INVALID_TARGET:
-          // for some reason current target is no longer valid
-          // reset target for next tick, but keep task as task should still be valid
-          log.info(`harvest: target no longer valid`);
-          creep.memory.target = null;
-          flag = false;
-          break;
-        case ERR_NOT_IN_RANGE:
-          log.info(`harvest: moving to source '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`harvest: cannot find path to source`);
-              creep.memory.target = null;
-              flag = true;
-              break;
-            case ERR_TIRED:
-              log.info(`harvest: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`harvest: unknown response during move to source '${moveResult}'`);
-              flag = true;
-          }
-          break;
-        case OK:
-          log.info(`harvest: harvesting`);
-          // store the current source so that we can move away from it once
-          // harvesting is complete, this is so we don't block the source
-          // from other creeps
-          creep.memory.nearSource = target.id;
-          flag = true;
-          break;
-        default:
-          log.info(`harvest: unknown response '${result}'`);
-          flag = true;
-      }
+      flag = actions.harvest(creep, target, 'harvest');
     }
   } else {
     creep.memory.task = null;
@@ -530,26 +486,7 @@ function pickup(creep) {
           flag = false;
           break;
         case ERR_NOT_IN_RANGE:
-          log.info(`pickup: moving to source '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`pickup: cannot find path to dropped energy`);
-              creep.memory.target = null;
-              flag = false;
-              break;
-            case ERR_TIRED:
-              log.info(`pickup: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`pickup: unknown response during move to droppedEnergy '${moveResult}'`);
-              flag = true;
-          }
-          flag = true;
+          flag = actions.moveTo(creep, target, 'pickup');
           break;
         case OK:
           log.info(`pickup: picking up energy`);
@@ -570,10 +507,10 @@ function pickup(creep) {
 }
 
 function renew(creep) {
-  let flag = true;
+  let flag;
 
-  if (creep.memory.task == 'renew' || creep.ticksToLive < 200) {
-    if (!creep.memory.task == 'renew') {
+  if (creep.memory.task == 'renew' || creep.ticksToLive < 300) {
+    if (creep.memory.task != 'renew') {
       creep.memory.task = 'renew';
       creep.say('renewing');
     }
@@ -591,9 +528,8 @@ function renew(creep) {
 
       switch (result) {
         case ERR_NOT_IN_RANGE:
-          log.info(`renew: moving to spawn to renew`);
-          creep.moveTo(spawn);
-          flag = true;
+          log.info('renew: not in range of spawn');
+          flag = actions.moveTo(creep, spawn, 'renew');
           break;
         case ERR_FULL:
           log.info(`renew: all filled up`);
@@ -603,7 +539,7 @@ function renew(creep) {
           break;
         case ERR_NOT_ENOUGH_ENERGY:
           log.info(`renew: spawn out of energy`);
-          if (creep.ticksToLive > 350) { // move on to other things
+          if (creep.ticksToLive > 500) { // move on to other things
             creep.memory.target = null;
             creep.memory.task = null;
             flag = false;
@@ -617,6 +553,11 @@ function renew(creep) {
           break;
         case OK:
           log.info(`renew: renewing`);
+          if (creep.ticksToLive > 750) { // move on to other things
+            creep.memory.target = null;
+            creep.memory.task = null;
+            flag = true;
+          }
           flag = true;
         default:
           flag = true;
@@ -631,10 +572,70 @@ function renew(creep) {
   return flag;
 }
 
+function staticHarvest(creep) {
+  let flag;
+
+  if (creep.memory.isStatic) {
+    if (!creep.memory.task == 'staticHarvest') {
+      creep.memory.task = 'staticHarvest';
+      creep.say('staticy!');
+    }
+
+    let source = creep.memory.source;
+    if (!source) {
+      source = helpers.getTarget(creep, 'source', { nearest: true });
+    }
+
+    let container = creep.memory.container;
+    if (!container) {
+      container = helpers.getTarget(creep, 'energyHolder', { nearest: true, types: [STRUCTURE_CONTAINER] });
+    }
+
+    if (!source) {
+      log.info(`staticHarvest: no source available`);
+      flag = false;
+    } else if (!container) {
+      log.info(`staticHarvest: no container available`);
+      flag = false;
+    } else {
+      creep.memory.source = source;
+      creep.memory.container = container;
+      let sourceTarget =  Game.getObjectById(source);
+      let containerTarget =  Game.getObjectById(container);
+
+      // harvest
+      flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
+
+      // transfer
+      flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+    }
+  } else {
+    let target = creep.memory.staticTarget;
+    if (!target) {
+      target = helpers.getTarget(creep, 'staticHarvestLocation');
+    }
+
+    if (target) {
+      creep.memory.staticTarget = target;
+
+      let staticTarget = Game.flags[target];
+      flag = actions.moveTo(creep, staticTarget, 'staticHarvest');
+      if (creep.pos.getRangeTo(staticTarget) == 0) {
+        creep.memory.isStatic = true;
+      }
+    } else {
+      log.info(`staticHarvest: no static harvest locations available`);
+      flag = false;
+    }
+  }
+
+  return flag;
+}
+
 function transfer(creep) {
   let flag = true;
 
-  if (creep.carry.energy == 0) {
+  if (_.sum(creep.carry) == 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
@@ -647,11 +648,12 @@ function transfer(creep) {
     }
 
     if (!target) {
-      target = helpers.getTarget(creep, 'energyHolders');
+      target = helpers.getTarget(creep, 'energyHolder');
     }
 
     // if there is no target at this point, no valid target was found
     if (!target) {
+      log.info('transfer: could not find an energy holder');
       creep.memory.target = null;
       flag = false;
     } else {
@@ -663,56 +665,26 @@ function transfer(creep) {
 
       target = Game.getObjectById(target);
 
-      let result = creep.transfer(target, RESOURCE_ENERGY);
+      let transferType;
+      if (target.structureType == STRUCTURE_STORAGE) {
+        if (creep.carry[RESOURCE_ENERGY]) {
+          transferType = RESOURCE_ENERGY;
+        } else {
+          for (let carryType in creep.carry) {
+            if (carryType != RESOURCE_ENERGY) {
+              transferType = carryType;
+            }
+          }
+        }
+      } else {
+        transferType = RESOURCE_ENERGY;
+      }
 
-      switch (result) {
-        case ERR_FULL:
-          log.info(`transfer: structure full of energy`);
-          creep.memory.target = null;
-          flag = false;
-          break;
-        case ERR_INVALID_TARGET:
-          // for some reason current target is no longer valid
-          // reset target for next tick, but keep task as task should still be valid
-          log.info(`transfer: target no longer valid`);
-          creep.memory.target = null;
-          flag = false;
-          break;
-        case ERR_NOT_IN_RANGE:
-          log.info(`transfer: moving to structure '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`transfer: cannot find path to structure`);
-              creep.memory.target = null;
-              flag = false;
-              break;
-            case ERR_TIRED:
-              log.info(`transfer: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`transfer: unknown response during move to structure '${moveResult}'`);
-              flag = true;
-          }
-          break;
-        case OK:
-          log.info(`transfer: transferring`);
-          // reset task now if creep is out of energy after transfer
-          if (creep.carry.energy == 0) {
-            creep.memory.target = null;
-            creep.memory.task = null;
-          }
-          flag = true;
-          break;
-        default:
-          log.info(`transfer: unknown response '${result}'`);
-          creep.memory.target = null;
-          creep.memory.task = null;
-          flag = true;
+      flag = actions.transfer(creep, target, 'transfer', transferType);
+
+      // stay here and keep depositing if the creep is still carrying anything
+      if (!_.sum(creep.carry) == 0 && target.structureType) {
+        creep.memory.task = 'transfer';
       }
     }
   }
@@ -739,6 +711,10 @@ function withdraw(creep) {
       target = helpers.getTarget(creep, 'energyStore');
     }
 
+    if (!target) {
+      target = helpers.getTarget(creep, 'storage');
+    }
+
     // if there is no target at this point, no valid target was found
     if (!target) {
       creep.memory.target = null;
@@ -750,69 +726,10 @@ function withdraw(creep) {
         creep.say('taking');
       }
 
+
       target = Game.getObjectById(target);
-      // if (creep.pos.getRangeTo(target) == 1 && target.energy == 0) {
-      //   target = helpers.getTarget(creep, 'energyStore');
-      // }
 
-      let result = creep.withdraw(target, RESOURCE_ENERGY);
-
-      switch (result) {
-        case ERR_FULL:
-          log.info(`withdraw: creep full of energy`);
-          creep.memory.target = null;
-          flag = false;
-          break;
-        case ERR_INVALID_TARGET:
-          // for some reason current target is no longer valid
-          // reset target for next tick, but keep task as task should still be valid
-          log.info(`withdraw: target no longer valid`);
-          creep.memory.target = null;
-          flag = false;
-          break;
-        case ERR_NOT_ENOUGH_RESOURCES:
-          log.info(`withdraw: store is out of resources`);
-          creep.memory.target = null;
-          flag = true;
-          break;
-        case ERR_NOT_IN_RANGE:
-          log.info(`withdraw: moving to energy store '${target}'`);
-          let moveResult = creep.moveTo(target);
-          switch (moveResult) {
-            case ERR_NO_PATH:
-              log.info(`withdraw: cannot find path to energy store`);
-              creep.memory.target = null;
-              flag = false;
-              break;
-            case ERR_TIRED:
-              log.info(`withdraw: creep is tired during move, will tray again later`);
-              flag = true;
-              break;
-            case OK:
-              flag = true;
-              break;
-            default:
-              log.info(`withdraw: unknown response during move to energy store '${moveResult}'`);
-              flag = true;
-          }
-          break;
-        case OK:
-          log.info(`withdraw: withdrawing`);
-          // reset task now if creep is full of energy after withdraw
-          if (creep.carry.energy == creep.carryCapacity) {
-            creep.memory.target = null;
-            creep.memory.task = null;
-          } else if (target.energy < 2) { // reset if if current target is out of energy
-            creep.memory.target = null;
-          }
-          flag = true;
-          break;
-        default:
-          log.info(`withdraw: unknown response '${result}'`);
-          creep.memory.target = null;
-          creep.memory.task = null;
-          flag = true;
-      }
+      flag = actions.withdraw(creep, target, 'withdraw');
     }
   }
 
@@ -843,26 +760,7 @@ function upgrade(creep) {
         flag = false;
         break;
       case ERR_NOT_IN_RANGE:
-        log.info(`upgrade: moving to controller`);
-        let moveResult = creep.moveTo(creep.room.controller);
-        switch (moveResult) {
-          case ERR_NO_PATH:
-            log.info(`upgrade: cannot find path to controller`);
-            creep.memory.target = null;
-            flag = false;
-            break;
-          case ERR_TIRED:
-            log.info(`upgrade: creep is tired during move, will tray again later`);
-            flag = true;
-            break;
-          case OK:
-            flag = true;
-            break;
-          default:
-            log.info(`harvest: unknown response during move to controller '${moveResult}'`);
-            flag = true;
-        }
-
+        flag = actions.moveTo(creep, creep.room.controller, 'upgrade');
         break;
       case OK:
         log.info(`upgrade: controller is being enhanced`);
@@ -887,13 +785,16 @@ function upgrade(creep) {
 module.exports = {
   build: build,
   claim: claim,
+  fillup: fillup,
   fix: fix,
+  getWorkEnergy: getWorkEnergy,
   guard:  guard,
   harvest: harvest,
   motivate: motivate,
   patrol: patrol,
   pickup: pickup,
   renew: renew,
+  staticHarvest: staticHarvest,
   transfer: transfer,
   withdraw: withdraw,
   upgrade:  upgrade

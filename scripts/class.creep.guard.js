@@ -3,7 +3,6 @@
 let CreepBase = require('class.creep.base');
 let helpers = require('helpers');
 let log = require('logger');
-helpers.setLogger(log);
 
 class CreepGuard extends CreepBase {
   constructor(role = 'guard', parts = [TOUGH, MOVE, RANGED_ATTACK]) {
