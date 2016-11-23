@@ -5,16 +5,10 @@ let tasks = require('tasks');
 let log = require('logger');
 
 class CreepBase {
-  constructor(role, parts = [WORK, CARRY, MOVE]) {
+  constructor(role = 'harvester', parts = [WORK, CARRY, MOVE]) {
     this.parts = parts;
     this.role = role;
     this.tasks = [];
-  }
-
-  isDying() {
-    let creep = Game.creeps[this.name];
-
-    return creep.ticksToLive < 200;
   }
 
   activate() {
@@ -43,42 +37,6 @@ class CreepBase {
         if (result) {
           break;
         }
-      }
-    }
-  }
-
-  // renewal method on base creep as all creeps will need this
-  // TODO: put this in tasks instead?
-  renew(creep) {
-    creep = creep || Game.creeps[this.name];
-
-    let spawn = Game.getObjectById(creep.memory.target);
-    if (!spawn || spawn.structureType != 'spawn') {
-      spawn = helpers.getTarget(creep, 'spawn');
-      creep.memory.target = spawn;
-      spawn = Game.getObjectById(creep.memory.target)
-      creep.say('renewing');
-    }
-
-    if (spawn) {
-      let result = spawn.renewCreep(creep);
-
-      switch (result) {
-        case ERR_NOT_IN_RANGE:
-          log.info(`moving to spawn to renew`);
-          creep.moveTo(spawn);
-          break;
-        case ERR_FULL:
-          creep.memory.renewing = false;
-          creep.memory.target = null;
-          break;
-        case ERR_NOT_ENOUGH_ENERGY:
-          creep.memory.renewing = false;
-          creep.memory.target = null;
-          break;
-        default:
-          log.info(`renewing`);
-          creep.memory.renewing = true;
       }
     }
   }

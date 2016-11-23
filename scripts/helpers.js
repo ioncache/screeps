@@ -3,23 +3,37 @@
 let log = require('logger');
 let strings = require('strings');
 
-function findCoordNearSpawn(creep) {
+function calculateCreepCost(parts) {
+  let costs = {
+    attack: 80,
+    carry: 50,
+    claim: 600,
+    heal: 250,
+    move: 50,
+    ranged_attack: 150,
+    tough: 10,
+    work: 100
+  }
+
+  let cost = 0;
+
+  for (let part of parts) {
+    if (costs[part]) {
+      cost += costs[part];
+    }
+  }
+
+  return cost;
+}
+
+function findPositionNearSpawn(creep) {
   let target;
 
-  let spawns = creep.room.find(
-    FIND_STRUCTURES,
-    {
-      filter: (structure) => {
-        return structure.structureType == STRUCTURE_SPAWN;
-      }
-    }
-  );
+  let spawn = getTarget(creep, 'spawn');
 
-  if (spawns.length) {
-    let spawn = spawns[0];
-
-    let i = 1;
-    while (!creep.pos.findPathTo(spawn.pos.x + i, spawn.pos.y + i) && i < 10) {
+  if (spawn) {
+    let i = 2;
+    while (!creep.pos.findPathTo(spawn.pos.x + i, spawn.pos.y + i) && i < 11) {
       i++;
     }
     target = new RoomPosition(spawn.pos.x + i, spawn.pos.y + i, spawn.pos.roomName);
@@ -39,27 +53,22 @@ function getTarget(creep, type, opts = {}) {
 
   switch (type) {
     case 'buildable':
-      let buildables = creep.room.find(FIND_CONSTRUCTION_SITES);
-      if (buildables.length) {
-        target = _.min(buildables, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
+      let buildable = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+      if (buildable) {
+        target = buildable.id;
       }
       break;
-    case 'droppedEnergy':
-      let droppedEnergy = creep.room.find(FIND_DROPPED_ENERGY);
-      if (droppedEnergy.length) {
-        target = _.min(droppedEnergy, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
-      }
-      break;
-    case 'energyHolder':
-      let energyHolders;
 
-      energyHolders = creep.room.find(
+    case 'droppedEnergy':
+      let droppedEnergy = creep.pos.findClosestByRange(FIND_DROPPED_ENERGY);
+      if (droppedEnergy) {
+        target = droppedEnergy.id;
+      }
+      break;
+
+    // an energyHolder is a structure for creeps to transfer energy to
+    case 'energyHolder':
+      let energyHolder = creep.pos.findClosestByRange(
         FIND_STRUCTURES,
         {
           filter: (structure) => {
@@ -67,7 +76,7 @@ function getTarget(creep, type, opts = {}) {
               return opts.types.includes(structure.structureType);
             } else {
               return (
-                structure.structureType == STRUCTURE_SPAWN &&
+                structure.energyCapacity > 0 &&
                 structure.energy < structure.energyCapacity
               );
             }
@@ -75,52 +84,31 @@ function getTarget(creep, type, opts = {}) {
         }
       );
 
-      if (energyHolders.length) {
-        target = _.min(energyHolders, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
-      } else {
-        energyHolders = creep.room.find(
-          FIND_STRUCTURES,
-          {
-            filter: (structure) => {
-              if (opts.types) {
-                return opts.types.includes(structure.structureType);
-              } else {
-                return (
-                  structure.energyCapacity > 0 &&
-                  structure.energy < structure.energyCapacity
-                );
-              }
-            }
-          }
-        );
+      if (energyHolder) {
+        target = energyHolder.id;
+      }
 
-        if (energyHolders.length) {
-          target = _.min(energyHolders, (i) => {
-            return creep.pos.getRangeTo(i);
-          });
-          target = target.id;
-        }
-
-        if (!target && !opts.types) {
-          target = getTarget(creep, 'storage');
-        }
+      if (!target && !opts.types) {
+        target = getTarget(creep, 'storage');
       }
 
       break;
+
+    // an energyStore is a structure where a creep can withdraw energy from
     case 'energyStore':
-      let energyStores;
+      let energyStore;
       if (opts.filter) {
-        energyStores = creep.room.find(
+        let energyStores = creep.room.find(
           FIND_STRUCTURES,
           {
             filter: opts.filter
           }
         );
+        if (energyStores.length) {
+          energyStore = energyStores[0];
+        }
       } else {
-        energyStores = creep.room.find(
+        energyStore = creep.pos.findClosestByRange(
           FIND_STRUCTURES,
           {
             filter: (store) => {
@@ -141,22 +129,21 @@ function getTarget(creep, type, opts = {}) {
         );
       }
 
-      if (energyStores.length) {
-        target = _.min(energyStores, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
+      if (energyStore) {
+        target = energyStore.id;
       }
 
       break;
+
+    // any structure that has less than it's maximum hit points
     case 'fixable':
-      let fixables = creep.room.find(
+      let fixable = creep.pos.findClosestByRange(
         FIND_STRUCTURES,
         {
           filter: (structure) => {
-            opts.maxHits = opts.maxHits || {};
-            if (opts.maxHits[structure.structureType]) {
-              return structure.hits < opts.maxHits[structure.structureType];
+            let maxHits = opts.maxHits || {};
+            if (maxHits[structure.structureType]) {
+              return structure.hits < maxHits[structure.structureType];
             } else {
               return structure.hits < structure.hitsMax;
             }
@@ -164,14 +151,13 @@ function getTarget(creep, type, opts = {}) {
         }
       );
 
-      if (fixables.length) {
-        target = _.min(fixables, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
+      if (fixable) {
+        target = fixable.id;
       }
 
       break;
+
+    // special flag indicating a place for guards to stand
     case 'guardPost':
       let guardPosts = creep.room.find(FIND_FLAGS, {
         filter: (post) => {
@@ -197,8 +183,15 @@ function getTarget(creep, type, opts = {}) {
       }
 
       break;
+
+    // of opts.nearest is true will just find the nearest source
+    // otherwise will evenly distribute creeps across sources in the room
     case 'source':
-        let sources = creep.room.find(FIND_SOURCES);
+        let sources = creep.room.find(FIND_SOURCES, {
+          filter: (source) => {
+            return source.energy > 0;
+          }
+        });
 
         if (sources.length > 0) {
 
@@ -241,15 +234,12 @@ function getTarget(creep, type, opts = {}) {
             }
           }
       break;
+
     case 'spawn':
-      let spawns = creep.room.find(FIND_MY_SPAWNS);
+      let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
 
-      spawns.sort((a, b) => {
-        return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-      });
-
-      if (spawns.length) {
-        target = spawns[0].id;
+      if (spawn) {
+        target = spawn.id;
       }
 
       if (!target) {
@@ -257,23 +247,26 @@ function getTarget(creep, type, opts = {}) {
       }
 
       break;
+
     case 'storage':
-      let storages;
+      let storage;
       if (opts.filter) {
-        storages = creep.room.find(
+        let storages = creep.room.find(
           FIND_STRUCTURES,
           {
             filter: opts.filter
           }
         );
+        if (storages.length) {
+          storage = storages[0];
+        }
       } else {
-        storages = creep.room.find(
+        storage = creep.pos.findClosestByRange(
           FIND_STRUCTURES,
           {
             filter: (storage) => {
               return (
                 storage.structureType == STRUCTURE_STORAGE &&
-                storage.storeCapacity > 0 &&
                 _.sum(storage.store) < storage.storeCapacity
               );
             }
@@ -281,14 +274,13 @@ function getTarget(creep, type, opts = {}) {
         );
       }
 
-      if (storages.length) {
-        target = _.min(storages, (i) => {
-          return creep.pos.getRangeTo(i);
-        });
-        target = target.id;
+      if (storage) {
+        target = storage.id;
       }
 
       break;
+
+    // special flag indicating a place for staticHarvesters to stand
     case 'staticHarvestLocation':
       let staticHarvestLocations = creep.room.find(FIND_FLAGS, {
         filter: (location) => {
@@ -339,7 +331,7 @@ function moveAwayFromSource(creep, sourceId) {
 }
 
 function generateName(role = 'harvester') {
-  let title = strings.titles[role] || 'NoNameDude';
+  let title = strings.titles[role] || _.upperFirst(role);
 
   let currentNames = Object.keys(Game.creeps);
   let name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
@@ -351,6 +343,7 @@ function generateName(role = 'harvester') {
 }
 
 module.exports = {
+  calculateCreepCost: calculateCreepCost,
   generateName: generateName,
   getRandomInt: getRandomInt,
   getTarget: getTarget,

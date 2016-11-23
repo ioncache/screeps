@@ -41,11 +41,11 @@ function harvest(creep, target, task) {
   return flag;
 }
 
-function moveTo(creep, target, task) {
+function moveTo(creep, target, task, opts = {}) {
   let flag;
 
   log.info(`${task}: moving to '${target}'`);
-  let moveResult = creep.moveTo(target);
+  let moveResult = creep.moveTo(target, opts);
   switch (moveResult) {
     case ERR_NO_PATH:
       log.info(`${task}: cannot find path to '${target}', resetting target`);
@@ -86,7 +86,14 @@ function transfer(creep, target, task, type = RESOURCE_ENERGY) {
       flag = false;
       break;
     case ERR_NOT_IN_RANGE:
-      flag = moveTo(creep, target, task);
+      // storages and spawns can be bottlenecks
+      // lower reusepath when transfering to them to help optimize paths as
+      // creeps move to and away from these structures
+      if ([STRUCTURE_STORAGE, STRUCTURE_SPAWN].includes(target.structureType)) {
+        flag = moveTo(creep, target, task, { reusePath: 3 });
+      } else {
+        flag = moveTo(creep, target, task);
+      }
       break;
     case OK:
       log.info(`${task}: transferring to structure`);
@@ -128,7 +135,6 @@ function withdraw(creep, target, task) {
     case ERR_NOT_ENOUGH_RESOURCES:
       log.info(`${task}: store is out of resources`);
       creep.memory.target = null;
-      creep.memory.task = null;
       flag = false;
       break;
     case ERR_NOT_IN_RANGE:
@@ -136,8 +142,8 @@ function withdraw(creep, target, task) {
       break;
     case OK:
       log.info(`${task}: withdrawing`);
-      // reset task now if creep is full of energy after withdraw
-      if (creep.carry.energy == creep.carryCapacity) {
+      // reset task now if creep is full after withdraw
+      if (_.sum(creep.carry) >= creep.carryCapacity) {
         creep.memory.target = null;
         creep.memory.task = null;
       } else if (target.energy < 2) { // reset if if current target is out of energy

@@ -5,7 +5,7 @@ let helpers = require('helpers');
 let log = require('logger');
 
 class CreepFixer extends CreepBase {
-  constructor(role = 'fixer', parts = [WORK, CARRY, CARRY, MOVE, MOVE]) {
+  constructor(role = 'fixer', parts = [WORK, WORK, CARRY, CARRY, MOVE, MOVE]) {
     super(role, parts);
 
     this.tasks = [

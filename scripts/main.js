@@ -17,11 +17,11 @@ let creepConfig = {
   banker: {
     class: banker,
     min: 0,
-    priority: 7
+    priority: 1.875
   },
   builder: {
     class: builder,
-    min: 4,
+    min: 3,
     priority: 3
   },
   builderBasic: {
@@ -33,11 +33,11 @@ let creepConfig = {
   courier: {
     class: courier,
     min: 0,
-    priority: 16
+    priority: 1.75
   },
   fixer: {
     class: fixer,
-    min: 4,
+    min: 2,
     priority: 4
   },
   fixerBasic: {
@@ -53,7 +53,8 @@ let creepConfig = {
   },
   harvester: {
     class: harvester,
-    min: 6,
+    defaultMin: 8,
+    min: 8,
     priority: 1
   },
   harvesterBasic: {
@@ -67,15 +68,10 @@ let creepConfig = {
     min: 0,
     priority: 50
   },
-  scout: {
-    class:  function() {},
-    min: 0,
-    priority: 50
-  },
   staticHarvester: {
     class: staticHarvester,
     min: 0,
-    priority: 15
+    priority: 1.5
   },
   upgrader: {
     class: upgrader,
@@ -137,6 +133,8 @@ module.exports.loop = function () {
     });
 
     staticHarvesterCount += _.min([staticHarvestLocations.length, containers.length]);
+    creepConfig.staticHarvester.min = staticHarvesterCount;
+    creepConfig.harvester.min = creepConfig.harvester.defaultMin - (3 * staticHarvesterCount);
 
     // determine the correct number of guards to spawn based on guard posts
     let guardPosts = Game.rooms[name].find(FIND_FLAGS, {
@@ -158,21 +156,29 @@ module.exports.loop = function () {
       if (closestHostile) {
         tower.attack(closestHostile);
       } else {
-        let closestDamagedStructure = tower.pos.findClosestByRange(
-          FIND_STRUCTURES,
-          {
-            filter: (structure) => structure.hits < structure.hitsMax
-          }
-        );
-
-        if (closestDamagedStructure) {
-          tower.repair(closestDamagedStructure);
-        }
+        // let maxHits = {
+        //   constructedWall: 5000,
+        //   rampart: 10000
+        // };
+        // let closestDamagedStructure = tower.pos.findClosestByRange(
+        //   FIND_STRUCTURES,
+        //   {
+        //     filter: (structure) => {
+        //       if (maxHits[structure.structureType]) {
+        //         return structure.hits < maxHits[structure.structureType];
+        //       } else {
+        //         return structure.hits < structure.hitsMax;
+        //       }
+        //     }
+        //   }
+        // );
+        //
+        // if (closestDamagedStructure) {
+        //   tower.repair(closestDamagedStructure);
+        // }
       }
     }
   }
-
-  creepConfig.staticHarvester.min = staticHarvesterCount;
 
   // // only begin spawning guards if current population is high enough
   // if (
@@ -198,6 +204,35 @@ module.exports.loop = function () {
     let creeps = _.filter(Game.creeps, (creep) => { return creep.memory.role == role; });
     log.log(`Current '${role}' count: ${creeps.length} / ${creepConfig[role].min}`);
     creepConfig[role].currentCount = creeps.length;
+  }
+
+  // recycle old harvesters once staic harvesters come online
+  if (
+    creepConfig.harvester.currentCount > creepConfig.harvester.min &&
+    creepConfig.staticHarvester.currentCount > 0
+  ) {
+    let recycleAmount = creepConfig.harvester.currentCount - creepConfig.harvester.min;
+    let currentlyRecycling = Object.keys(Game.creeps).filter((creepName) => {
+      let creep = Game.creeps[creepName];
+      return creep.memory.role == 'harvester' && creep.memory.task == 'recycle';
+    });
+
+    let notRecycling = Object.keys(Game.creeps).filter((creepName) => {
+      let creep = Game.creeps[creepName];
+      return creep.memory.role == 'harvester' &&  creep.memory.task != 'recycle';
+    });
+
+    recycleAmount -= currentlyRecycling.length;
+
+    for (let i = 0; i < recycleAmount; i++) {
+      console.log('will recycle', notRecycling[i]);
+      let creep = Game.creeps[notRecycling[i]];
+      creep.memory.task = 'recycle';
+    }
+  }
+
+  for (let role of roles) {
+    let creeps = _.filter(Game.creeps, (creep) => { return creep.memory.role == role; });
 
     if (creeps.length < creepConfig[role].min) {
       // if all creeps of a type are dead, make some simple
@@ -211,31 +246,64 @@ module.exports.loop = function () {
         role = `${role}Basic`;
       }
 
+      let spawn = Game.spawns['Spawn1'];
       let creepClass = creepConfig[role].class;
       let newCreep = new creepClass(role);
       let parts = creepConfig[role].parts || newCreep.parts;
-      let newName = Game.spawns['Spawn1'].createCreep(parts, helpers.generateName(role), { role: role });
+      let cost = helpers.calculateCreepCost(parts);
+      let roomEnergy = spawn.room.energyAvailable;
+      let desiredEnergy = Math.ceil(cost * 1.25);
 
-      switch (newName) {
-        case ERR_NOT_ENOUGH_ENERGY:
-          log.log(`Not enough energy to spawn '${role}'`);
-          break;
-        case ERR_BUSY:
-          break;
-        case ERR_INVALID_ARGS:
-          log.log(`Invalid args creating creep of role ${role}`);
-          break;
-        default:
-          newCreep.name = newName;
-          creepList[newName] = newCreep;
-          log.log(`Spawning new '${role}': ${newName}`);
+      let skipSpawn = false;
+      if (spawn.spawning) {
+        log.log(`spawn: spawn is busy, please try again`);
+        skipSpawn = true;
+      } else if (desiredEnergy <= roomEnergy) {
+        let newName = spawn.createCreep(parts, helpers.generateName(role), { role: role });
+
+        switch (newName) {
+          case ERR_NOT_ENOUGH_ENERGY:
+            log.log(`spawn: not enough energy to spawn '${role}'`);
+            skipSpawn = true;
+            break;
+          case ERR_BUSY:
+            skipSpawn = true;
+            break;
+          case ERR_INVALID_ARGS:
+            log.log(`spawn: invalid args creating creep of role ${role}`);
+            skipSpawn = true;
+            break;
+          case OK:
+            newCreep.name = newName;
+            creepList[newName] = newCreep;
+            skipSpawn = true;
+            log.log(`spwn: a new '${role}' is born: ${newName}`);
+          default:
+            log.log(`spawn: unknown response from spawn: ${newName}`);
+        }
+      } else {
+        log.log(`spawn: not enough energy for '${role}': current: ${spawn.room.energyAvailable} -- cost: ${cost} -- desired: ${desiredEnergy}`);
+        skipSpawn = true;
+      }
+
+      if (skipSpawn) {
+        break;
       }
     }
   }
 
-  // up courier count if staticHarvesters exist
+  // up courierand banker  count if staticHarvesters exist
+  // TODO fix up per room logic
   if (creepConfig.staticHarvester.currentCount > 0) {
-    creepConfig.courier.min = creepConfig.staticHarvester.currentCount * 3;
+    let storages = Object.keys(Game.structures).filter((structureName) => {
+      return Game.structures[structureName].structureType == STRUCTURE_STORAGE;
+    });
+    if (storages.length) {
+      creepConfig.banker.min = creepConfig.staticHarvester.currentCount;
+      creepConfig.courier.min = creepConfig.staticHarvester.currentCount * 2;
+    } else {
+      creepConfig.courier.min = creepConfig.staticHarvester.currentCount * 3;
+    }
   }
 
   log.log(`Total creeps: ${Object.keys(Game.creeps).length}`);

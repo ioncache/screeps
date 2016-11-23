@@ -5,23 +5,24 @@ let helpers = require('helpers');
 let log = require('logger');
 
 class CreepBanker extends CreepBase {
-  constructor(role = 'harvester', parts = [WORK, WORK, CARRY, CARRY, MOVE, MOVE]) {
+  constructor(role = 'staticHarvester', parts = [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
       'renew',
-      'harvest',
-      'deposit'
+      'transferStorage',
+      'pickup',
+      'fillup'
     ];
   }
 
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `must save all the energy`);
+    log.start(creep.name, `hoarding energy is a solid investment strategy`);
 
     super.activate();
 
-    log.finish(`hope no one takes it from my storage`);
+    log.finish(`the security of my storage is second to none`);
   }
 }
 

@@ -6,6 +6,15 @@ Methods will return true if the creep should perform no other tasks this tick
 Methods will return false if either the creep should not do this task or if
 the task allows for other actions to be taken afterwards
 
+TODO: this should be changed to return something more along the lines of:
+
+{
+  didAction: boolean,
+  didAnimation: boolean
+}
+
+some of the tasks could end up doing 1 or both of the types of creep actions
+
 */
 
 let actions = require('taskActions');
@@ -254,8 +263,17 @@ function fix(creep) {
     let target;
 
     if (creep.memory.task == 'fix' && creep.memory.target) {
-      // TODO: verify target
       target = creep.memory.target;
+      if (target) {
+        let tempTarget = Game.getObjectById(target);
+        if (
+          (maxHits[target.structureType] &&
+          target.hits > maxHits[target.structureType]) ||
+          target.hits >= target.hitsMax
+        ) {
+          target = null;
+        }
+      }
     }
 
     if (!target) {
@@ -336,9 +354,12 @@ function getWorkEnergy(creep) {
 
   let sources = creep.room.find(FIND_SOURCES);
 
+  let energySource = helpers.getTarget(creep, 'energyStore');
+
   if (
-    staticHarvesters.length >= sources.length ||
-    harvesters.length >= (sources.length * 4)
+    energySource &&
+    (staticHarvesters.length >= sources.length ||
+    harvesters.length >= (sources.length * 4))
   ) {
     return withdraw(creep);
   } else {
@@ -506,6 +527,62 @@ function pickup(creep) {
   return flag;
 }
 
+// task to replace current creep with a new creep
+// this may be because:
+// - the class for this type of creep has been upgraded
+// - a new class of creep would be better suited for this creep's job
+//
+// this task will
+// - trigger spawning of new creep
+// - copy current creep's memory to new creep
+// - set task of current creep to recycle
+// - in the case of replacing this creep with one of a different kind
+//   then the population min values will get updated accordingly
+//   so that no new creeps spawn of this type when it recycles
+function rebirth(creep, newRole) {
+  let flag;
+
+  // TODO: maybe write the actual function
+
+  return flag;
+}
+
+function recycle(creep) {
+  let flag;
+
+  let spawn;
+  let spawns = creep.room.find(FIND_MY_SPAWNS);
+  if (spawns) {
+    spawn = spawns[0];
+  } else {
+    spawns = Object.keys(Game.spawns);
+    if (spawns) {
+      spawn = Game.spawns[spawns[0]];
+    }
+  }
+
+  if (creep.pos.getRangeTo(spawn) > 1) {
+    flag = actions.moveTo(creep, spawn, 'recycle');
+  } else {
+    if (creep.carry.energy) {
+      flag = actions.transfer(creep, spawn, 'recycle');
+    } else {
+      let result = spawn.recycleCreep(creep);
+
+      switch (result) {
+        case ERR_NOT_IN_RANGE:
+          flag = actions.moveTo(creep, spawn, 'recycle');
+          break;
+        default:
+          flag = true;
+      }
+    }
+  }
+
+  creep.memory.task = 'recycle';
+  return flag;
+}
+
 function renew(creep) {
   let flag;
 
@@ -608,6 +685,13 @@ function staticHarvest(creep) {
 
       // transfer
       flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+
+      // if source is out of energy, do a renew if needed
+      if (sourceTarget.energy == 0 && creep.ticksToLive < 600) {
+        creep.memory.task = 'renew';
+        creep.memory.target = null;
+        flag = true;
+      }
     }
   } else {
     let target = creep.memory.staticTarget;
@@ -632,10 +716,15 @@ function staticHarvest(creep) {
   return flag;
 }
 
-function transfer(creep) {
+function transferStorage(creep) {
+  return transfer(creep, true);
+}
+
+function transfer(creep, storageTarget) {
   let flag = true;
 
-  if (_.sum(creep.carry) == 0) {
+  // only transfer if we have enough to make it worthwhile
+  if (_.sum(creep.carry) < 50) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
@@ -643,8 +732,18 @@ function transfer(creep) {
     let target;
 
     if (creep.memory.task == 'transfer' && creep.memory.target) {
-      // TODO: verify target
       target = creep.memory.target;
+      let tempTarget = Game.getObjectById(target);
+
+      // if the current target is now full, we can look for a new target
+      // this will ignore storages as they don't have an energyCapcity property
+      if (tempTarget.energyCapactity && (creep.carry.energy + structure.energy) >= structure.energyCapacity) {
+        target = null;
+      }
+    }
+
+    if (!target && storageTarget) {
+      target = helpers.getTarget(creep, 'storage');
     }
 
     if (!target) {
@@ -686,50 +785,6 @@ function transfer(creep) {
       if (!_.sum(creep.carry) == 0 && target.structureType) {
         creep.memory.task = 'transfer';
       }
-    }
-  }
-
-  return flag;
-}
-
-function withdraw(creep) {
-  let flag = true;
-
-  if (creep.carry.energy == creep.carryCapacity) {
-    creep.memory.target = null;
-    creep.memory.task = null;
-    flag = false;
-  } else {
-    let target;
-
-    if (creep.memory.task == 'withdraw' && creep.memory.target) {
-      // TODO: verify target
-      target = creep.memory.target;
-    }
-
-    if (!target) {
-      target = helpers.getTarget(creep, 'energyStore');
-    }
-
-    if (!target) {
-      target = helpers.getTarget(creep, 'storage');
-    }
-
-    // if there is no target at this point, no valid target was found
-    if (!target) {
-      creep.memory.target = null;
-      flag = false;
-    } else {
-      creep.memory.target = target;
-      if (creep.memory.task != 'withdraw') {
-        creep.memory.task = 'withdraw';
-        creep.say('taking');
-      }
-
-
-      target = Game.getObjectById(target);
-
-      flag = actions.withdraw(creep, target, 'withdraw');
     }
   }
 
@@ -782,6 +837,58 @@ function upgrade(creep) {
   return flag;
 }
 
+function withdraw(creep) {
+  let flag = true;
+
+  if (creep.carry.energy == creep.carryCapacity) {
+    creep.memory.target = null;
+    creep.memory.task = null;
+    flag = false;
+  } else {
+    let target;
+
+    if (creep.memory.task == 'withdraw' && creep.memory.target) {
+      target = creep.memory.target;
+      let tempTarget = Game.getObjectById(target);
+
+      // if the current target is now empty, we can look for a new target
+      if (
+        tempTarget.energy > 0 ||
+        (tempTarget.store && tempTarget.store.energy > 0)
+      ) {
+        target = null;
+      }
+    }
+
+    if (!target) {
+      target = helpers.getTarget(creep, 'energyStore');
+    }
+
+    if (!target) {
+      target = helpers.getTarget(creep, 'storage');
+    }
+
+    // if there is no target at this point, no valid target was found
+    if (!target) {
+      creep.memory.target = null;
+      flag = false;
+    } else {
+      creep.memory.target = target;
+      if (creep.memory.task != 'withdraw') {
+        creep.memory.task = 'withdraw';
+        creep.say('taking');
+      }
+
+
+      target = Game.getObjectById(target);
+
+      flag = actions.withdraw(creep, target, 'withdraw');
+    }
+  }
+
+  return flag;
+}
+
 module.exports = {
   build: build,
   claim: claim,
@@ -793,9 +900,12 @@ module.exports = {
   motivate: motivate,
   patrol: patrol,
   pickup: pickup,
+  rebirth: rebirth,
+  recycle: recycle,
   renew: renew,
   staticHarvest: staticHarvest,
   transfer: transfer,
+  transferStorage: transferStorage,
   withdraw: withdraw,
   upgrade:  upgrade
 };
