@@ -505,7 +505,7 @@ function parking(creep) {
 
   if (
     parking &&
-    creep.pos.rangeTo(parking) > 2
+    creep.pos.getRangeTo(parking) > 2
   ) {
     actions.moveTo(creep, parking, 'parking');
     creep.memory.task = 'parking';
