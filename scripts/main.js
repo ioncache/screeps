@@ -259,11 +259,23 @@ module.exports.loop = function () {
 
   if (towerCount > 0)  {
     creepConfig.fixer.min = 0;
-    creepConfig.builder.class = seriousBuilder;
-
     let fixers = _.filter(Game.creeps, (creep) => { return creep.memory.role == 'fixer'; });
     for (let fixer of fixers) {
       fixer.memory.task = 'recycle';
+    }
+
+    creepConfig.builder.class = seriousBuilder;
+    let builders = _.filter(Game.creeps, (creep) => { return creep.memory.role == 'builder'; });
+    for (let creep of builders) {
+      if (
+        creepList[creep.name] &&
+        creepList[creep.name] instanceof builder
+      ) {
+        let newCreep = new seriousBuilder(creepConfig.builder.class);
+        newCreep.name = creep.name;
+        creepList[creep.name] = newCreep;
+        creep.memory.task = 'parking';
+      }
     }
   }
 

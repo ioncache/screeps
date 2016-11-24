@@ -494,6 +494,30 @@ function motivate(creep) {
   return false;
 }
 
+function parking(creep) {
+  let flag;
+
+  let parking =  creep.pos.findClosestByRange(FIND_FLAGS, {
+    filter: (post) => {
+      return /^ParkingArea/.test(post.name);
+    }
+  });
+
+  if (
+    parking &&
+    creep.pos.rangeTo(parking) > 2
+  ) {
+    actions.moveTo(creep, parking, 'parking');
+    creep.memory.task = 'parking';
+    flag = true;
+  } else {
+    flag = false;
+    creep.memory.task = null;
+  }
+
+  return flag;
+}
+
 function patrol(creep) {
   // TODO: implement
   log.info(`patrol: well I would, but patrolling isn't implemented yet`);
@@ -729,14 +753,18 @@ function staticHarvest(creep) {
       let containerTarget = Game.getObjectById(container);
       let linkTarget = Game.getObjectById(link);
 
-      // harvest
-      flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
-
-      // transfer
-      if (linkTarget) {
-        flag = actions.transfer(creep, linkTarget, 'staticHarvest');
+      if (creep.pos.getRangeTo(source) > 1) {
+        flag = actions.moveTo(creep, source, 'staticHarvest');
       } else {
-        flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+        // harvest
+        flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
+
+        // transfer
+        if (linkTarget) {
+          flag = actions.transfer(creep, linkTarget, 'staticHarvest');
+        } else {
+          flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+        }
       }
 
       // if source is out of energy, do a renew if needed
@@ -979,6 +1007,7 @@ module.exports = {
   guard:  guard,
   harvest: harvest,
   motivate: motivate,
+  parking: parking,
   patrol: patrol,
   pickup: pickup,
   rebirth: rebirth,
