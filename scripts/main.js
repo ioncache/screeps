@@ -76,7 +76,7 @@ let creepConfig = {
   },
   upgrader: {
     class: upgrader,
-    min: 4,
+    min: 3,
     priority: 2
   },
   upgraderBasic: {
@@ -154,6 +154,10 @@ module.exports.loop = function () {
       }
     });
 
+    towers.sort((a, b) => {
+      b.energy - a.energy
+    });
+
     for (let tower of towers) {
       let closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
       if (closestHostile) {
@@ -167,12 +171,12 @@ module.exports.loop = function () {
 
         if (woundedCreep) {
           tower.heal(woundedCreep);
-        } else {
+        } else if (tower.energy > tower.energyCapacity * 0.75) { // always keep energy for shooting
           let maxHits = {
             constructedWall: 5000,
             rampart: 10000
           };
-          let closestDamagedStructure = tower.pos.findClosestByRange(
+          let furthestDamagedStructures = tower.room.find(
             FIND_STRUCTURES,
             {
               filter: (structure) => {
@@ -185,8 +189,12 @@ module.exports.loop = function () {
             }
           );
 
-          if (closestDamagedStructure) {
-            tower.repair(closestDamagedStructure);
+          furthestDamagedStructures.sort((a, b) =>{
+            tower.pos.getRangeTo(b) - tower.pos.getRangeTo(a);
+          });
+
+          if (furthestDamagedStructures) {
+            tower.repair(furthestDamagedStructures[0]);
           }
         }
       }
@@ -264,19 +272,21 @@ module.exports.loop = function () {
       fixer.memory.task = 'recycle';
     }
 
-    creepConfig.builder.class = seriousBuilder;
-    let builders = _.filter(Game.creeps, (creep) => { return creep.memory.role == 'builder'; });
-    for (let creep of builders) {
-      if (
-        creepList[creep.name] &&
-        creepList[creep.name] instanceof builder
-      ) {
-        let newCreep = new seriousBuilder(creepConfig.builder.class);
-        newCreep.name = creep.name;
-        creepList[creep.name] = newCreep;
-        creep.memory.task = 'parking';
-      }
-    }
+    // creepConfig.builder.class = seriousBuilder;
+    // let builders = _.filter(Game.creeps, (creep) => { return creep.memory.role == 'builder'; });
+    // for (let creep of builders) {
+    //   if (
+    //     creepList[creep.name] &&
+    //     creepList[creep.name] instanceof builder
+    //   ) {
+    //     let newCreep = new seriousBuilder(creepConfig.builder.class);
+    //     newCreep.name = creep.name;
+    //     creepList[creep.name] = newCreep;
+    //     if (creep.memory.task == 'fix') {
+    //       creep.memory.task = 'parking';
+    //     }
+    //   }
+    // }
   }
 
   let roles = Object.keys(creepConfig).sort((a, b) => {

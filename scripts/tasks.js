@@ -22,6 +22,10 @@ let helpers = require('helpers');
 let log = require('logger');
 let strings = require('strings');
 
+function seriousBuild(creep) {
+  let flag = build;
+}
+
 function build(creep) {
   let flag = true;
 
@@ -227,16 +231,19 @@ function fillup(creep) {
   } else {
     let container = creep.memory.container;
     if (!container) {
+      let controllerLink = helpers.getTarget(creep, 'controllerLink');
       let containers = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
             [
-              STRUCTURE_CONTAINER
-              // STRUCTURE_LINK
+              STRUCTURE_CONTAINER,
             ].includes(structure.structureType) &&
             (
-              (structure.store && structure.store[RESOURCE_ENERGY] > 1) ||
-              structure.energy > 1
+              structure.id != controllerLink &&
+              (
+                (structure.store && structure.store[RESOURCE_ENERGY] > 1) ||
+                structure.energy > 1
+              )
             )
           );
         }
@@ -509,10 +516,15 @@ function parking(creep) {
   ) {
     actions.moveTo(creep, parking, 'parking');
     creep.memory.task = 'parking';
+    creep.memory.parkingMeter = 10;
     flag = true;
   } else {
-    flag = false;
-    creep.memory.task = null;
+    creep.memory.parkingMeter -= 1;
+    if (creep.memory.parkingMeter) {
+      renew(creep, 'parking');
+    } else {
+      creep.memory.task = null;
+    }
   }
 
   return flag;
@@ -597,6 +609,7 @@ function rebirth(creep, newRole) {
 }
 
 function recycle(creep) {
+  let flag;
   let spawn;
   let spawns = creep.room.find(FIND_MY_SPAWNS);
   if (spawns) {
@@ -629,10 +642,10 @@ function recycle(creep) {
   }
 
   creep.memory.task = 'recycle';
-  return true;;
+  return true;
 }
 
-function renew(creep) {
+function renew(creep, nextTask) {
   let flag;
 
   if (creep.memory.task == 'renew' || creep.ticksToLive < 300) {
@@ -660,14 +673,14 @@ function renew(creep) {
         case ERR_FULL:
           log.info(`renew: all filled up`);
           creep.memory.target = null;
-          creep.memory.task = null;
+          creep.memory.task = nextTask || null;
           flag = false;
           break;
         case ERR_NOT_ENOUGH_ENERGY:
           log.info(`renew: spawn out of energy`);
           if (creep.ticksToLive > 500) { // move on to other things
             creep.memory.target = null;
-            creep.memory.task = null;
+            creep.memory.task = nextTask || null;
             flag = false;
           } else { // stick it out and wait for energy
             // transfer any held energy so we can renew
@@ -681,7 +694,7 @@ function renew(creep) {
           log.info(`renew: renewing`);
           if (creep.ticksToLive > 750) { // move on to other things
             creep.memory.target = null;
-            creep.memory.task = null;
+            creep.memory.task = nextTask || null;
             flag = true;
           }
           flag = true;
@@ -690,7 +703,7 @@ function renew(creep) {
       }
     }
   } else {
-    creep.memory.target = null;
+    creep.memory.target = nextTask || null;
     creep.memory.task = 0;
     flag = false;
   }
@@ -721,24 +734,6 @@ function staticHarvest(creep) {
       );
     }
 
-    let link = creep.memory.link;
-    if (!link) {
-      link = creep.pos.findClosestByRange(
-        FIND_STRUCTURES, {
-          filter: (s) => {
-            return (
-              s.structureType == STRUCTURE_LINK &&
-              creep.pos.getRangeTo(s) == 1
-            );
-          }
-        }
-      );
-
-      if (link) {
-        link = link.id;
-      }
-    }
-
     if (!source) {
       log.info(`staticHarvest: no source available`);
       flag = false;
@@ -746,21 +741,40 @@ function staticHarvest(creep) {
       log.info(`staticHarvest: no container available`);
       flag = false;
     } else {
+      let link = creep.memory.link;
+      if (!link && container) {
+        link = creep.pos.findClosestByRange(
+          FIND_STRUCTURES, {
+            filter: (s) => {
+              return (
+                s.structureType == STRUCTURE_LINK &&
+                creep.pos.getRangeTo(s) == 1 &&
+                container.pos.getRangeTo(s) <= 2
+              );
+            }
+          }
+        );
+
+        if (link) {
+          link = link.id;
+        }
+      }
+
       creep.memory.source = source;
       creep.memory.container = container;
       creep.memory.link = link;
-      let sourceTarget =  Game.getObjectById(source);
+      let sourceTarget = Game.getObjectById(source);
       let containerTarget = Game.getObjectById(container);
       let linkTarget = Game.getObjectById(link);
 
-      if (creep.pos.getRangeTo(source) > 1) {
-        flag = actions.moveTo(creep, source, 'staticHarvest');
+      if (creep.pos.getRangeTo(sourceTarget) > 1) {
+        flag = actions.moveTo(creep, sourceTarget, 'staticHarvest');
       } else {
         // harvest
         flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
 
         // transfer
-        if (linkTarget) {
+        if (linkTarget && creep.room.energyAvailable >= 500) { // use link when there is prolific energy
           flag = actions.transfer(creep, linkTarget, 'staticHarvest');
         } else {
           flag = actions.transfer(creep, containerTarget, 'staticHarvest');
@@ -817,7 +831,16 @@ function transfer(creep, storageTarget) {
 
       // if the current target is now full, we can look for a new target
       // this will ignore storages as they don't have an energyCapcity property
-      if (tempTarget.energyCapactity && (creep.carry.energy + structure.energy) >= structure.energyCapacity) {
+      if (
+        (
+          tempTarget.energyCapactity &&
+          (creep.carry.energy + tempTarget.energy) >= tempTarget.energyCapacity
+        ) ||
+        (
+          tempTarget.store &&
+          (creep.carry.energy + _.sum(tempTarget.store)) >= tempTarget.storeCapacity
+        )
+      ) {
         target = null;
       }
     }
@@ -886,10 +909,10 @@ function transferResources(creep) {
     } else {
       for (let type in creep.carry) {
         if (type == 'energy') {
-          next;
+          continue;
         }
 
-        flag = actions.tansfer(creep, target, 'transferResource', type);
+        flag = actions.transfer(creep, target, 'transferResource', type);
         if (flag) {
           break;
         }
@@ -962,8 +985,8 @@ function withdraw(creep) {
 
       // if the current target is now empty, we can look for a new target
       if (
-        tempTarget.energy > 0 ||
-        (tempTarget.store && tempTarget.store.energy > 0)
+        tempTarget.energy == 0 ||
+        (tempTarget.store && tempTarget.store.energy == 0)
       ) {
         target = null;
       }

@@ -138,8 +138,8 @@ function getTarget(creep, type, opts = {}) {
                   STRUCTURE_STORAGE
                 ].includes(store.structureType) &&
                 (
-                  store.energy > 0 ||
-                  ( store.store && store.store[RESOURCE_ENERGY] > 0 )
+                  store.energy >= 50 ||
+                  ( store.store && store.store[RESOURCE_ENERGY] >= 50 )
                 )
               );
             }
