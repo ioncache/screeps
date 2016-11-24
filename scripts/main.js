@@ -10,6 +10,7 @@ let fixer = require('class.creep.fixer');
 let guard = require('class.creep.guard');
 let harvester = require('class.creep.harvester');
 let pioneer = require('class.creep.pioneer');
+let seriousBuilder = require('class.creep.seriousBuilder');
 let staticHarvester = require('class.creep.staticHarvester');
 let upgrader = require('class.creep.upgrader');
 
@@ -135,6 +136,8 @@ module.exports.loop = function () {
     staticHarvesterCount += _.min([staticHarvestLocations.length, containers.length]);
     creepConfig.staticHarvester.min = staticHarvesterCount;
     creepConfig.harvester.min = creepConfig.harvester.defaultMin - (3 * staticHarvesterCount);
+    // always keep 1 around
+    creepConfig.harvester.min = creepConfig.harvester.min || 1;
 
     // determine the correct number of guards to spawn based on guard posts
     let guardPosts = Game.rooms[name].find(FIND_FLAGS, {
@@ -165,26 +168,26 @@ module.exports.loop = function () {
         if (woundedCreep) {
           tower.heal(woundedCreep);
         } else {
-          // let maxHits = {
-          //   constructedWall: 5000,
-          //   rampart: 10000
-          // };
-          // let closestDamagedStructure = tower.pos.findClosestByRange(
-          //   FIND_STRUCTURES,
-          //   {
-          //     filter: (structure) => {
-          //       if (maxHits[structure.structureType]) {
-          //         return structure.hits < maxHits[structure.structureType];
-          //       } else {
-          //         return structure.hits < structure.hitsMax;
-          //       }
-          //     }
-          //   }
-          // );
-          //
-          // if (closestDamagedStructure) {
-          //   tower.repair(closestDamagedStructure);
-          // }
+          let maxHits = {
+            constructedWall: 5000,
+            rampart: 10000
+          };
+          let closestDamagedStructure = tower.pos.findClosestByRange(
+            FIND_STRUCTURES,
+            {
+              filter: (structure) => {
+                if (maxHits[structure.structureType]) {
+                  return structure.hits < maxHits[structure.structureType];
+                } else {
+                  return structure.hits < structure.hitsMax;
+                }
+              }
+            }
+          );
+
+          if (closestDamagedStructure) {
+            tower.repair(closestDamagedStructure);
+          }
         }
       }
     }
@@ -214,7 +217,13 @@ module.exports.loop = function () {
       });
 
       for (let link of links) {
-        if (link.energy <= controllerLink.energyCapacity - controllerLink.energy) {
+        if (
+          // use 100 as there is a 3% energy loss per transfer
+          // and 3% of 100 is a whole number
+          link.energy >= 100 &&
+          link.cooldown == 0 &&
+          link.energy <= controllerLink.energyCapacity - controllerLink.energy
+        ) {
           link.transferEnergy(controllerLink);
         }
       }
@@ -235,6 +244,28 @@ module.exports.loop = function () {
   // } else {
   //   creepConfig.guard.min = 0;
   // }
+
+  let towerCount = 0;
+
+  for (let name in Game.rooms) {
+    let towers = Game.rooms[name].find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return structure.structureType == STRUCTURE_TOWER;
+      }
+    });
+
+    towerCount += towers.length;
+  }
+
+  if (towerCount > 0)  {
+    creepConfig.fixer.min = 0;
+    creepConfig.builder.class = seriousBuilder;
+
+    let fixers = _.filter(Game.creeps, (creep) => { return creep.memory.role == 'fixer'; });
+    for (let fixer of fixers) {
+      fixer.memory.task = 'recycle';
+    }
+  }
 
   let roles = Object.keys(creepConfig).sort((a, b) => {
     return creepConfig[a].priority - creepConfig[b].priority
@@ -332,7 +363,7 @@ module.exports.loop = function () {
     }
   }
 
-  // up courierand banker  count if staticHarvesters exist
+  // up courier and banker count if staticHarvesters exist
   // TODO fix up per room logic
   if (creepConfig.staticHarvester.currentCount > 0) {
     let storages = Object.keys(Game.structures).filter((structureName) => {

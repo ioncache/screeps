@@ -232,14 +232,22 @@ function fillup(creep) {
           return (
             [
               STRUCTURE_CONTAINER
+              // STRUCTURE_LINK
             ].includes(structure.structureType) &&
-            structure.store[RESOURCE_ENERGY] > 1
+            (
+              (structure.store && structure.store[RESOURCE_ENERGY] > 1) ||
+              structure.energy > 1
+            )
           );
         }
       });
 
       container = _.max(containers, (i) => {
-        return i.store[RESOURCE_ENERGY];
+        if (i.store) {
+          return i.store[RESOURCE_ENERGY];
+        } else {
+          return i.energy
+        }
       });
       if (container) {
         container = container.id;
@@ -565,8 +573,6 @@ function rebirth(creep, newRole) {
 }
 
 function recycle(creep) {
-  let flag;
-
   let spawn;
   let spawns = creep.room.find(FIND_MY_SPAWNS);
   if (spawns) {
@@ -583,7 +589,9 @@ function recycle(creep) {
   } else {
     if (creep.carry.energy) {
       flag = actions.transfer(creep, spawn, 'recycle');
-    } else {
+    }
+
+    if (!flag) {
       let result = spawn.recycleCreep(creep);
 
       switch (result) {
@@ -597,7 +605,7 @@ function recycle(creep) {
   }
 
   creep.memory.task = 'recycle';
-  return flag;
+  return true;;
 }
 
 function renew(creep) {
@@ -682,7 +690,29 @@ function staticHarvest(creep) {
 
     let container = creep.memory.container;
     if (!container) {
-      container = helpers.getTarget(creep, 'energyHolder', { nearest: true, types: [STRUCTURE_CONTAINER] });
+      container = helpers.getTarget(
+        creep,
+        'energyHolder',
+        { nearest: true, types: [STRUCTURE_CONTAINER] }
+      );
+    }
+
+    let link = creep.memory.link;
+    if (!link) {
+      link = creep.pos.findClosestByRange(
+        FIND_STRUCTURES, {
+          filter: (s) => {
+            return (
+              s.structureType == STRUCTURE_LINK &&
+              creep.pos.getRangeTo(s) == 1
+            );
+          }
+        }
+      );
+
+      if (link) {
+        link = link.id;
+      }
     }
 
     if (!source) {
@@ -694,14 +724,20 @@ function staticHarvest(creep) {
     } else {
       creep.memory.source = source;
       creep.memory.container = container;
+      creep.memory.link = link;
       let sourceTarget =  Game.getObjectById(source);
-      let containerTarget =  Game.getObjectById(container);
+      let containerTarget = Game.getObjectById(container);
+      let linkTarget = Game.getObjectById(link);
 
       // harvest
       flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
 
       // transfer
-      flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+      if (linkTarget) {
+        flag = actions.transfer(creep, linkTarget, 'staticHarvest');
+      } else {
+        flag = actions.transfer(creep, containerTarget, 'staticHarvest');
+      }
 
       // if source is out of energy, do a renew if needed
       if (sourceTarget.energy == 0 && creep.ticksToLive < 600) {
@@ -740,8 +776,7 @@ function transferStorage(creep) {
 function transfer(creep, storageTarget) {
   let flag = true;
 
-  let currentLoad = _.sum(creep.carry);
-  if (_.sum(creep.carry) == 0) {
+  if (creep.carry.energy == 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
@@ -801,6 +836,35 @@ function transfer(creep, storageTarget) {
       // stay here and keep depositing if the creep is still carrying anything
       if (!_.sum(creep.carry) == 0 && target.structureType) {
         creep.memory.task = 'transfer';
+      }
+    }
+  }
+
+  return flag;
+}
+
+// transfer things other than energy
+function transferResources(creep) {
+  let flag;
+
+  if (
+    _.sum(creep.carry) > 0 &&
+    Object.keys(creep.carry).length > 1
+  ) {
+    let target = creep.room.storage;
+
+    if (!target) {
+      flag = false;
+    } else {
+      for (let type in creep.carry) {
+        if (type == 'energy') {
+          next;
+        }
+
+        flag = actions.tansfer(creep, target, 'transferResource', type);
+        if (flag) {
+          break;
+        }
       }
     }
   }
@@ -922,6 +986,7 @@ module.exports = {
   renew: renew,
   staticHarvest: staticHarvest,
   transfer: transfer,
+  transferResources: transferResources,
   transferStorage: transferStorage,
   withdraw: withdraw,
   upgrade:  upgrade

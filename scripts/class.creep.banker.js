@@ -8,6 +8,7 @@ class CreepBanker extends CreepBase {
     super(role, parts);
     this.tasks = [
       'renew',
+      'transferResources',
       'transferStorage',
       'pickup',
       'fillup'

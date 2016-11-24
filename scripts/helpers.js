@@ -59,6 +59,23 @@ function getTarget(creep, type, opts = {}) {
       }
       break;
 
+    case 'controllerLink':
+      let controllerLink = creep.room.controller.pos.findClosestByRange(
+        FIND_STRUCTURES, {
+          filter: (s) => {
+            return (
+              s.structureType == STRUCTURE_LINK &&
+              creep.room.controller.pos.getRangeTo(s) <= 3
+            );
+          }
+        }
+      );
+
+      if (controllerLink) {
+        target = controllerLink.id;
+      }
+      break;
+
     case 'droppedEnergy':
       let droppedEnergy = creep.pos.findClosestByRange(FIND_DROPPED_ENERGY);
       if (droppedEnergy) {
@@ -76,6 +93,7 @@ function getTarget(creep, type, opts = {}) {
               return opts.types.includes(structure.structureType);
             } else {
               return (
+                structure.structureType != STRUCTURE_LINK &&
                 structure.energyCapacity > 0 &&
                 structure.energy < structure.energyCapacity
               );
@@ -181,6 +199,10 @@ function getTarget(creep, type, opts = {}) {
           break;
         }
       }
+
+      break;
+
+    case 'link':
 
       break;
 

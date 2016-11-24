@@ -8,6 +8,7 @@ class CreepHarvester extends CreepBase {
     super(role, parts);
     this.tasks = [
       'renew',
+      'transferResources',
       'pickup',
       'harvest',
       'transfer'

@@ -8,6 +8,7 @@ class CreepCourier extends CreepBase {
     super(role, parts);
     this.tasks = [
       'renew',
+      'transferResources',
       'transfer',
       'pickup',
       'fillup'
