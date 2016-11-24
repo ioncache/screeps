@@ -114,14 +114,14 @@ function getTarget(creep, type, opts = {}) {
             filter: (store) => {
               return (
                 [
-                  STRUCTURE_CONTAINER,
                   STRUCTURE_EXTENSION,
+                  STRUCTURE_LINK,
                   STRUCTURE_SPAWN,
                   STRUCTURE_STORAGE
                 ].includes(store.structureType) &&
                 (
-                  store.energy > 1 ||
-                  ( store.store && store.store[RESOURCE_ENERGY] > 1 )
+                  store.energy > 0 ||
+                  ( store.store && store.store[RESOURCE_ENERGY] > 0 )
                 )
               );
             }

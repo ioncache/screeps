@@ -3,7 +3,7 @@
 let started = false;
 let logId = null;
 
-const DEBUG = true;
+const DEBUG = false;
 
 function base(message) {
   if (DEBUG) {

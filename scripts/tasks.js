@@ -25,9 +25,26 @@ let strings = require('strings');
 function build(creep) {
   let flag = true;
 
-  if (creep.carry.energy == 0) {
+  let constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
+  if (constructionSites.length == 0)  {
     creep.memory.target = null;
     creep.memory.task = null;
+    flag = false;
+  }
+  else if (
+    (creep.memory.task != 'build' &&
+    creep.carry.energy < 50) ||
+    creep.carry.energy == 0
+  ) { // don't start building until we have a useful amount
+    creep.memory.target = null;
+    creep.memory.task = 'getWorkEnergy';
+    flag = true;
+  } else if (
+    creep.room.energy < 50 * creep.room.find(FIND_SOURCES).length
+  ) { // always leave a minimum of energy in the room
+    log.info('build: not much energy in room, waiting to build');
+    // creep.memory.target = null;
+    // creep.memory.task = null;
     flag = false;
   } else {
     let target;
@@ -723,8 +740,8 @@ function transferStorage(creep) {
 function transfer(creep, storageTarget) {
   let flag = true;
 
-  // only transfer if we have enough to make it worthwhile
-  if (_.sum(creep.carry) < 50) {
+  let currentLoad = _.sum(creep.carry);
+  if (_.sum(creep.carry) == 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
@@ -840,7 +857,7 @@ function upgrade(creep) {
 function withdraw(creep) {
   let flag = true;
 
-  if (creep.carry.energy == creep.carryCapacity) {
+  if (_.sum(creep.carry) >= creep.carryCapacity) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;

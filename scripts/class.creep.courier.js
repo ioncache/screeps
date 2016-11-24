@@ -1,7 +1,6 @@
 'use strict';
 
 let CreepBase = require('class.creep.base');
-let helpers = require('helpers');
 let log = require('logger');
 
 class CreepCourier extends CreepBase {

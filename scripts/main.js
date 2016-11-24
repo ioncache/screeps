@@ -75,7 +75,7 @@ let creepConfig = {
   },
   upgrader: {
     class: upgrader,
-    min: 5,
+    min: 4,
     priority: 2
   },
   upgraderBasic: {
@@ -156,30 +156,70 @@ module.exports.loop = function () {
       if (closestHostile) {
         tower.attack(closestHostile);
       } else {
-        // let maxHits = {
-        //   constructedWall: 5000,
-        //   rampart: 10000
-        // };
-        // let closestDamagedStructure = tower.pos.findClosestByRange(
-        //   FIND_STRUCTURES,
-        //   {
-        //     filter: (structure) => {
-        //       if (maxHits[structure.structureType]) {
-        //         return structure.hits < maxHits[structure.structureType];
-        //       } else {
-        //         return structure.hits < structure.hitsMax;
-        //       }
-        //     }
-        //   }
-        // );
-        //
-        // if (closestDamagedStructure) {
-        //   tower.repair(closestDamagedStructure);
-        // }
+        let woundedCreep =  tower.pos.findClosestByRange(FIND_MY_CREEPS, {
+            filter: (creep) => {
+                return creep.hits < creep.hitsMax;
+            }
+        });
+
+        if (woundedCreep) {
+          tower.heal(woundedCreep);
+        } else {
+          // let maxHits = {
+          //   constructedWall: 5000,
+          //   rampart: 10000
+          // };
+          // let closestDamagedStructure = tower.pos.findClosestByRange(
+          //   FIND_STRUCTURES,
+          //   {
+          //     filter: (structure) => {
+          //       if (maxHits[structure.structureType]) {
+          //         return structure.hits < maxHits[structure.structureType];
+          //       } else {
+          //         return structure.hits < structure.hitsMax;
+          //       }
+          //     }
+          //   }
+          // );
+          //
+          // if (closestDamagedStructure) {
+          //   tower.repair(closestDamagedStructure);
+          // }
+        }
+      }
+    }
+
+    let controllerLink = Game.rooms[name].controller.pos.findClosestByRange(
+      FIND_STRUCTURES, {
+        filter: (s) => {
+          return (
+            s.structureType == STRUCTURE_LINK &&
+            Game.rooms[name].controller.pos.getRangeTo(s) <= 3
+          );
+        }
+      }
+    );
+
+    if (
+      controllerLink &&
+      controllerLink.energy < controllerLink.energyCapacity
+    ) {
+      let links = Game.rooms[name].find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+            structure.id != controllerLink.id &&
+            structure.structureType == STRUCTURE_LINK
+          );
+        }
+      });
+
+      for (let link of links) {
+        if (link.energy <= controllerLink.energyCapacity - controllerLink.energy) {
+          link.transferEnergy(controllerLink);
+        }
       }
     }
   }
-
   // // only begin spawning guards if current population is high enough
   // if (
   //   creepConfig.fixer.currentCount >= Math.ceil(creepConfig.fixer.min / 2) &&
@@ -308,7 +348,7 @@ module.exports.loop = function () {
 
   log.log(`Total creeps: ${Object.keys(Game.creeps).length}`);
 
-  log.log('\n***** Creep Actions *****\n\n');
+  log.info('\n***** Creep Actions *****\n\n');
 
   for (let name in Game.creeps) {
     let creep = Game.creeps[name];
