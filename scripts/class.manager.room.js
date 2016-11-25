@@ -12,7 +12,6 @@ let classes = {
   guard: require('class.creep.guard'),
   harvester: require('class.creep.harvester'),
   pioneer: require('class.creep.pioneer'),
-  seriousBuilder: require('class.creep.seriousBuilder'),
   staticHarvester: require('class.creep.staticHarvester'),
   upgrader: require('class.creep.upgrader')
 };
@@ -82,6 +81,8 @@ class RoomManager {
 
       // activate creeps
       this.activateCreeps();
+
+      log.log('\n\n');
     }
   }
 
@@ -91,7 +92,7 @@ class RoomManager {
     for (let creepName in this.creepList) {
       if (this.creepList[creepName]) {
         let creepObject = this.creepList[creepName];
-        // if (!creepObject.creep.spawning) {
+        if (Game.creeps[creepName].spawning) {
           // try {
             creepObject.activate();
           // }
@@ -99,7 +100,7 @@ class RoomManager {
           //   console.log(err);
           //   log.error(name, err);
           // }
-        // }
+        }
       }
     }
   }
@@ -242,26 +243,28 @@ class RoomManager {
       }
     }
 
-    // manage number of guards based on population levels
-    let guardPosts = this.room.find(FIND_FLAGS, {
-      filter: (post) => {
-        return /^GuardPost/.test(post.name);
+    if (this.creepConfig.guard) {
+      // manage number of guards based on population levels
+      let guardPosts = this.room.find(FIND_FLAGS, {
+        filter: (post) => {
+          return /^GuardPost/.test(post.name);
+        }
+      });
+      if (
+        guardPosts.length > 0 &&
+        this.creepConfig.fixer.currentCount >= Math.ceil(this.creepConfig.fixer.min / 2) &&
+        this.creepConfig.builder.currentCount >= Math.ceil(this.creepConfig.builder.min / 2) &&
+        (
+          this.creepConfig.harvester.currentCount >= Math.ceil(this.creepConfig.harvester.min / 2) ||
+          this.creepConfig.staticHarvester.currentCount > 0
+        ) &&
+        this.creepConfig.upgrader.currentCount >= Math.ceil(this.creepConfig.upgrader.min / 2)
+      ) {
+        log.log('resetting guard count for some reason', this.creepConfig.staticHarvester.currentCount);
+        this.creepConfig.guard.min = guardPosts.length;
+      } else {
+        this.creepConfig.guard.min = 0;
       }
-    });
-    if (
-      guardPosts.length > 0 &&
-      this.creepConfig.fixer.currentCount >= Math.ceil(this.creepConfig.fixer.min / 2) &&
-      this.creepConfig.builder.currentCount >= Math.ceil(this.creepConfig.builder.min / 2) &&
-      (
-        this.creepConfig.harvester.currentCount >= Math.ceil(this.creepConfig.harvester.min / 2) ||
-        this.creepConfig.staticHarvester.currentCount > 0
-      ) &&
-      this.creepConfig.upgrader.currentCount >= Math.ceil(this.creepConfig.upgrader.min / 2)
-    ) {
-      log.log('resetting guard count for some reason', this.creepConfig.staticHarvester.currentCount);
-      this.creepConfig.guard.min = guardPosts.length;
-    } else {
-      this.creepConfig.guard.min = 0;
     }
 
     // manage static harvester populaation based on StaticHarvestFlags present
@@ -271,45 +274,47 @@ class RoomManager {
       }
     });
 
-    // manage regular harvester population based on # of static harvesters
-    this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
-    this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
-    // always keep 1 harvester around
-    this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
+    if (this.creepConfig.staticHarvester) {
+      // manage regular harvester population based on # of static harvesters
+      this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
+      this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
+      // always keep 1 harvester around
+      this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
 
-    // recycle old harvesters once staic harvesters come online
-    if (
-      this.creepConfig.harvester.currentCount > this.creepConfig.harvester.min &&
-      this.creepConfig.staticHarvester.currentCount > 0
-    ) {
-      let recycleAmount = this.creepConfig.harvester.currentCount - this.creepConfig.harvester.min;
-      let currentlyRecycling = this.room.find(FIND_MY_CREEPS, {
-        filter: (creep) => {
-          return creep.memory.role === 'harvester' && creep.memory.task === 'recycle';
+      // recycle old harvesters once staic harvesters come online
+      if (
+        this.creepConfig.harvester.currentCount > this.creepConfig.harvester.min &&
+        this.creepConfig.staticHarvester.currentCount > 0
+      ) {
+        let recycleAmount = this.creepConfig.harvester.currentCount - this.creepConfig.harvester.min;
+        let currentlyRecycling = this.room.find(FIND_MY_CREEPS, {
+          filter: (creep) => {
+            return creep.memory.role === 'harvester' && creep.memory.task === 'recycle';
+          }
+        });
+
+        let notRecycling = this.room.find(FIND_MY_CREEPS, {
+          filter: (creep) => {
+            return creep.memory.role === 'harvester' &&  creep.memory.task !== 'recycle';
+          }
+        });
+
+        recycleAmount -= currentlyRecycling.length;
+
+        for (let i = 0; i < recycleAmount; i++) {
+          log.log('recycling harvester', notRecycling[i].name);
+          notRecycling[i].memory.task = 'recycle';
         }
-      });
-
-      let notRecycling = this.room.find(FIND_MY_CREEPS, {
-        filter: (creep) => {
-          return creep.memory.role === 'harvester' &&  creep.memory.task !== 'recycle';
-        }
-      });
-
-      recycleAmount -= currentlyRecycling.length;
-
-      for (let i = 0; i < recycleAmount; i++) {
-        log.log('recycling harvester', notRecycling[i].name);
-        notRecycling[i].memory.task = 'recycle';
       }
-    }
 
-    // manager courier and banker population based on current static harvesters
-    if (this.creepConfig.staticHarvester.currentCount > 0) {
-      if (this.room.storage) {
-        this.creepConfig.banker.min = this.creepConfig.staticHarvester.currentCount;
-        this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 2;
-      } else {
-        this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 3;
+      // manager courier and banker population based on current static harvesters
+      if (this.creepConfig.staticHarvester.currentCount > 0) {
+        if (this.room.storage) {
+          this.creepConfig.banker.min = this.creepConfig.staticHarvester.currentCount;
+          this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 2;
+        } else {
+          this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 3;
+        }
       }
     }
   }
@@ -317,7 +322,7 @@ class RoomManager {
   spawnCreeps() {
     let spawn;
     let spawns = this.room.find(FIND_MY_SPAWNS);
-    if (spawns) {
+    if (spawns.length > 0) {
       spawn = spawns[0]; // TODO: handle multiple spawns in same room
     } else {
       spawn = Game.spawns[config.masterSpawn];

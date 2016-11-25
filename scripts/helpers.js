@@ -49,12 +49,12 @@ function getTarget(creep, type, opts = {}) {
       break;
 
     case 'controllerLink':
-      let controllerLink = creep.room.controller.pos.findClosestByRange(
+      let controllerLink = Game.rooms[creep.memory.room].controller.pos.findClosestByRange(
         FIND_STRUCTURES, {
           filter: (s) => {
             return (
               s.structureType === STRUCTURE_LINK &&
-              creep.room.controller.pos.getRangeTo(s) <= 3
+              Game.rooms[creep.memory.room].controller.pos.getRangeTo(s) <= 3
             );
           }
         }
@@ -105,7 +105,7 @@ function getTarget(creep, type, opts = {}) {
     case 'energyStore':
       let energyStore;
       if (opts.filter) {
-        let energyStores = creep.room.find(
+        let energyStores = Game.rooms[creep.memory.room].find(
           FIND_STRUCTURES,
           {
             filter: opts.filter
@@ -166,13 +166,13 @@ function getTarget(creep, type, opts = {}) {
 
     // special flag indicating a place for guards to stand
     case 'guardPost':
-      let guardPosts = creep.room.find(FIND_FLAGS, {
+      let guardPosts = Game.rooms[creep.memory.room].find(FIND_FLAGS, {
         filter: (post) => {
           return /^GuardPost/.test(post.name);
         }
       });
 
-      let guards = creep.room.find(FIND_MY_CREEPS, {
+      let guards = Game.rooms[creep.memory.room].find(FIND_MY_CREEPS, {
         filter: (guard) => {
           return guard.memory.role === 'guard';
         }
@@ -198,7 +198,7 @@ function getTarget(creep, type, opts = {}) {
     // of opts.nearest is true will just find the nearest source
     // otherwise will evenly distribute creeps across sources in the room
     case 'source':
-        let sources = creep.room.find(FIND_SOURCES, {
+        let sources = Game.rooms[creep.memory.room].find(FIND_SOURCES, {
           filter: (source) => {
             return source.energy > 0;
           }
@@ -264,7 +264,7 @@ function getTarget(creep, type, opts = {}) {
     case 'storage':
       let storage;
       if (opts.filter) {
-        let storages = creep.room.find(
+        let storages = Game.rooms[creep.memory.room].find(
           FIND_STRUCTURES,
           {
             filter: opts.filter
@@ -295,13 +295,13 @@ function getTarget(creep, type, opts = {}) {
 
     // special flag indicating a place for staticHarvesters to stand
     case 'staticHarvestLocation':
-      let staticHarvestLocations = creep.room.find(FIND_FLAGS, {
+      let staticHarvestLocations = Game.rooms[creep.memory.room].find(FIND_FLAGS, {
         filter: (location) => {
           return /^StaticHarvest/.test(location.name);
         }
       });
 
-      let staticHarvesters = creep.room.find(FIND_MY_CREEPS, {
+      let staticHarvesters = Game.rooms[creep.memory.room].find(FIND_MY_CREEPS, {
         filter: (found) => {
           return found.memory.role === 'staticHarvester';
         }

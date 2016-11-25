@@ -30,7 +30,7 @@ function seriousBuild(creep) {
 function build(creep) {
   let flag = true;
 
-  let constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
+  let constructionSites = Game.rooms[creep.memory.room].find(FIND_CONSTRUCTION_SITES);
   if (constructionSites.length === 0)  {
     creep.memory.target = null;
     creep.memory.task = null;
@@ -44,7 +44,7 @@ function build(creep) {
     creep.memory.task = 'getWorkEnergy';
     flag = true;
   } else if (
-    creep.room.energy < 50 * creep.room.find(FIND_SOURCES).length
+    Game.rooms[creep.memory.room].energy < 50 * Game.rooms[creep.memory.room].find(FIND_SOURCES).length
   ) { // always leave a minimum of energy in the room
     log.info('build: not much energy in room, waiting to build');
     // creep.memory.target = null;
@@ -104,7 +104,7 @@ function build(creep) {
             // do an inital repair of ramparts just to give them some life
             // as they start with very little and decay quickly
             console.log('-> target was a rampart');
-            // let items = creep.room.lookAt(target.pos.x, target.pos.y);
+            // let items = Game.rooms[creep.memory.room].lookAt(target.pos.x, target.pos.y);
             // look.forEach(function(lookObject) {
             //   console.log(lookObject.type);
             // });
@@ -160,8 +160,8 @@ function claim(creep) {
     if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
       flag = actions.moveTo(creep, Game.flags[target], 'claim');
     } else {
-      creep.reserveController(creep.room.controller);
-      if (creep.room.controller.owner === 'ioncache') {
+      creep.reserveController(Game.rooms[creep.memory.room].controller);
+      if (Game.rooms[creep.memory.room].controller.owner === 'ioncache') {
         log.info(`claim: I already own the controller in this room`);
         Game.flags[creep.memory.target].remove();
         creep.memory.target = null;
@@ -169,7 +169,7 @@ function claim(creep) {
         flag = false;
       } else if (Object.keys(Game.rooms).length < Game.gcl.level) { // TODO: fix, object.keys is wrong
         log.info(`claim: attempting to claim ${creep.memory.target}`);
-        let claimResult = creep.claimController(creep.room.controller);
+        let claimResult = creep.claimController(Game.rooms[creep.memory.room].controller);
         switch (claimResult) {
           case ERR_FULL:
             log.info(`claim: already own 3 controllers in novice area, removing target flag ${creep.memory.target}`);
@@ -189,7 +189,7 @@ function claim(creep) {
             flag = false;
             break;
           case ERR_NOT_IN_RANGE:
-            flag = actions.moveTo(creep, creep.room.controller, 'claim');
+            flag = actions.moveTo(creep, Game.rooms[creep.memory.room].controller, 'claim');
             break;
           case OK:
             log.info(`claim: controller claimed huzzah`);
@@ -202,9 +202,9 @@ function claim(creep) {
             log.info(`claim: unknown response '${claimResult}'`);
             flag = true;
         }
-      } else if (!creep.room.controller.reservation || creep.room.controller.username === 'ioncache') {
+      } else if (!Game.rooms[creep.memory.room].controller.reservation || Game.rooms[creep.memory.room].controller.username === 'ioncache') {
         log.info(`claim: reserving new controller`);
-        let reserveController = creep.reserveController(creep.room.controller);
+        let reserveController = creep.reserveController(Game.rooms[creep.memory.room].controller);
         flag = true;
       } else {
         log.info(`claim: current gcl not high enough to claim new room`);
@@ -231,7 +231,7 @@ function fillup(creep) {
     let container = creep.memory.container;
     if (!container) {
       let controllerLink = helpers.getTarget(creep, 'controllerLink');
-      let containers = creep.room.find(FIND_STRUCTURES, {
+      let containers = Game.rooms[creep.memory.room].find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
             [
@@ -380,7 +380,7 @@ function getWorkEnergy(creep) {
     return ['harvester', 'basicHarvester'].includes(Game.creeps[name].memory.role);
   });
 
-  let sources = creep.room.find(FIND_SOURCES);
+  let sources = Game.rooms[creep.memory.room].find(FIND_SOURCES);
 
   let energySource = helpers.getTarget(creep, 'energyStore');
 
@@ -413,7 +413,7 @@ function guard(creep) {
       creep.say('guarding');
     }
 
-    let guardPosts = creep.room.find(FIND_FLAGS, {
+    let guardPosts = Game.rooms[creep.memory.room].find(FIND_FLAGS, {
       filter: (post) => {
         return post.name === creep.memory.post;
       }
@@ -607,7 +607,7 @@ function rebirth(creep, newRole) {
 function recycle(creep) {
   let flag;
   let spawn;
-  let spawns = creep.room.find(FIND_MY_SPAWNS);
+  let spawns = Game.rooms[creep.memory.room].find(FIND_MY_SPAWNS);
   if (spawns) {
     spawn = spawns[0];
   } else {
@@ -773,7 +773,7 @@ function staticHarvest(creep) {
         flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
 
         // transfer
-        if (linkTarget && creep.room.energyAvailable >= 500) { // use link when there is prolific energy
+        if (linkTarget && Game.rooms[creep.memory.room].energyAvailable >= 500) { // use link when there is prolific energy
           flag = actions.transfer(creep, linkTarget, 'staticHarvest');
         } else {
           flag = actions.transfer(creep, containerTarget, 'staticHarvest');
@@ -900,7 +900,7 @@ function transferResources(creep) {
   if (
     Object.keys(creep.carry).length > 1
   ) {
-    let target = creep.room.storage;
+    let target = Game.rooms[creep.memory.room].storage;
 
     if (!target) {
       flag = false;
@@ -931,7 +931,7 @@ function transferResources(creep) {
     if (!resourceContainer) {
       creep.memory.target = null;
 
-      let resourceContainers = creep.room.find(FIND_STRUCTURES, {
+      let resourceContainers = Game.rooms[creep.memory.room].find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
             [
@@ -1002,7 +1002,7 @@ function upgrade(creep) {
       creep.say('upgrading');
     }
 
-    let result = creep.upgradeController(creep.room.controller);
+    let result = creep.upgradeController(Game.rooms[creep.memory.room].controller);
 
     switch (result) {
       case ERR_INVALID_TARGET:
@@ -1013,7 +1013,7 @@ function upgrade(creep) {
         flag = false;
         break;
       case ERR_NOT_IN_RANGE:
-        flag = actions.moveTo(creep, creep.room.controller, 'upgrade');
+        flag = actions.moveTo(creep, Game.rooms[creep.memory.room].controller, 'upgrade');
         break;
       case OK:
         log.info(`upgrade: controller is being enhanced`);
