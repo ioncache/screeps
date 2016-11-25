@@ -332,37 +332,40 @@ class RoomManager {
   }
 
   spawnCreeps() {
-    let spawn;
-    let spawns = this.room.find(FIND_MY_SPAWNS);
-    if (spawns.length > 0) {
-      spawn = spawns[0]; // TODO: handle multiple spawns in same room
-    } else {
-      spawn = Game.spawns[config.masterSpawn];
-    }
+    let roles = Object.keys(this.creepConfig).sort((a, b) => {
+      return this.creepConfig[a].priority - this.creepConfig[b].priority;
+    });
 
-    if (spawn) {
-      let roles = Object.keys(this.creepConfig).sort((a, b) => {
-        return this.creepConfig[a].priority - this.creepConfig[b].priority;
+    for (let role of roles) {
+      let creeps = _.filter(Game.creeps, (creep) => {
+        return creep.memory.homeRoom === this.room.name && creep.memory.role === role;
       });
 
-      for (let role of roles) {
-        let creeps = _.filter(Game.creeps, (creep) => {
-          return creep.memory.homeRoom === this.room.name && creep.memory.role === role;
-        });
+      if (creeps.length < this.creepConfig[role].min) {
+        let skipSpawn = false;
+        let creepClass = classes[this.creepConfig[role].class];
+        let newCreep = new creepClass(role);
+        let parts = this.creepConfig[role].parts || newCreep.parts;
+        let cost = helpers.calculateCreepCost(parts);
+        let desiredEnergy = Math.ceil(cost * 1.25);
 
-        if (creeps.length < this.creepConfig[role].min) {
-          let creepClass = classes[this.creepConfig[role].class];
-          let newCreep = new creepClass(role);
-          let parts = this.creepConfig[role].parts || newCreep.parts;
-          let cost = helpers.calculateCreepCost(parts);
-          let roomEnergy = spawn.room.energyAvailable;
-          let desiredEnergy = Math.ceil(cost * 1.25);
+        let spawn;
+        let spawns = this.room.find(FIND_MY_SPAWNS);
+        if (
+          spawns.length > 0 &&
+          spawns[0].energyCapacityAvailable >= cost * 1.25
+        ) {
+          spawn = spawns[0]; // TODO: handle multiple spawns in same room
+        } else {
+          log.log('spawn: no room spawns or room does not have enough energy capacity, using master spawm');
+          spawn = Game.spawns[config.masterSpawn];
+        }
 
-          let skipSpawn = false;
+        if (spawn) {
           if (spawn.spawning) {
             log.log(`spawn: spawn is busy, please try again`);
             skipSpawn = true;
-          } else if (desiredEnergy <= roomEnergy) {
+          } else if (desiredEnergy <= spawn.room.energyAvailable) {
             let newName = spawn.createCreep(
               parts,
               helpers.generateName(role),
@@ -398,15 +401,16 @@ class RoomManager {
             log.log(message);
             skipSpawn = true;
           }
+        } else {
+          skipSpawn = true;
+        }
 
-          if (skipSpawn) {
-            break;
-          }
+        if (skipSpawn) {
+          break;
         }
       }
     }
   }
-
 }
 
 module.exports = RoomManager;

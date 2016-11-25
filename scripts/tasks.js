@@ -1011,7 +1011,15 @@ function transferResources(creep) {
 function upgrade(creep) {
   let flag = true;
 
-  if (creep.carry.energy === 0) {
+  if (
+    creep.carry.energy === 0 ||
+    ( // ensure creep has a useful amount of energy before heading off to upgrade
+      creep.memory.task === 'upgrade' &&
+      creep.memory.target &&
+      creep.energy < 50 &&
+      !creep.pos.isNearTo(Game.getObjectById(creep.memory.target))
+    )
+  ) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
@@ -1070,8 +1078,8 @@ function withdraw(creep) {
 
       // if the current target is now empty, we can look for a new target
       if (
-        tempTarget.energy === 0 ||
-        (tempTarget.store && tempTarget.store.energy === 0)
+        tempTarget.energy < 2 ||
+        (tempTarget.store && tempTarget.store.energy < 2)
       ) {
         target = null;
       }
