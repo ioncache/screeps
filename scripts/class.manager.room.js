@@ -62,7 +62,7 @@ class RoomManager {
       this.currentEnergy();
 
       // determine current population
-      this.currentPopulation();
+      this.findCurrentPopulation();
 
       // manage current desired population
       // - number of guards
@@ -81,6 +81,10 @@ class RoomManager {
 
       // activate links
       this.activateLinks();
+
+      // be nice and print out the current population after all spawning
+      // and management has occurred
+      this.displayPopulation()
 
       // activate creeps
       this.activateCreeps();
@@ -207,7 +211,7 @@ class RoomManager {
     return this.room.energyAvailable;
   }
 
-  currentPopulation() {
+  displayPopulation() {
     let roles = Object.keys(this.creepConfig).sort((a, b) => {
       return a.localeCompare(b);
     });
@@ -217,7 +221,6 @@ class RoomManager {
         return creep.memory.homeRoom === this.room.name && creep.memory.role === role;
       });
       log.log(`Current '${role}' count: ${creeps.length} / ${this.creepConfig[role].min}`);
-      this.creepConfig[role].currentCount = creeps.length;
     }
 
     let totalCreeps = _.sum(Object.keys(this.creepConfig), (i) => {
@@ -225,8 +228,19 @@ class RoomManager {
     });
 
     log.log(`Total creeps: ${totalCreeps}`);
+  }
 
-    return totalCreeps;
+  findCurrentPopulation() {
+    let roles = Object.keys(this.creepConfig).sort((a, b) => {
+      return a.localeCompare(b);
+    });
+
+    for (let role of roles) {
+      let creeps = _.filter(Game.creeps, (creep) => {
+        return creep.memory.homeRoom === this.room.name && creep.memory.role === role;
+      });
+      this.creepConfig[role].currentCount = creeps.length;
+    }
   }
 
   managePopulation() {
