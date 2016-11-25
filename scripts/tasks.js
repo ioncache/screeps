@@ -18,6 +18,7 @@ some of the tasks could end up doing 1 or both of the types of creep actions
 */
 
 let actions = require('taskActions');
+let config = require('config');
 let helpers = require('helpers');
 let log = require('logger');
 let strings = require('strings');
@@ -30,15 +31,14 @@ function build(creep) {
   let flag = true;
 
   let constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
-  if (constructionSites.length == 0)  {
+  if (constructionSites.length === 0)  {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
-  }
-  else if (
-    (creep.memory.task != 'build' &&
+  } else if (
+    (creep.memory.task !== 'build' &&
     creep.carry.energy < 50) ||
-    creep.carry.energy == 0
+    creep.carry.energy === 0
   ) { // don't start building until we have a useful amount
     creep.memory.target = null;
     creep.memory.task = 'getWorkEnergy';
@@ -53,7 +53,7 @@ function build(creep) {
   } else {
     let target;
 
-    if (creep.memory.task == 'build' && creep.memory.target) {
+    if (creep.memory.task === 'build' && creep.memory.target) {
       // TODO: verify target
       target = creep.memory.target;
     }
@@ -68,7 +68,7 @@ function build(creep) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'build') {
+      if (creep.memory.task !== 'build') {
         creep.memory.task = 'build';
         creep.say('building');
       }
@@ -96,15 +96,13 @@ function build(creep) {
         case OK:
           log.info(`build: constructing`);
           // reset task now if creep is out of energy after fix
-          if (creep.carry.energy == 0) {
+          if (creep.carry.energy === 0) {
             creep.memory.target = null;
             creep.memory.task = null;
-          }
-
-          // TODO:
-          // do an inital repair of ramparts just to give them some life
-          // as they start with very little and decay quickly
-          else if (target.structureType == STRUCTURE_RAMPART) {
+          } else if (target.structureType === STRUCTURE_RAMPART) {
+            // TODO:
+            // do an inital repair of ramparts just to give them some life
+            // as they start with very little and decay quickly
             console.log('-> target was a rampart');
             // let items = creep.room.lookAt(target.pos.x, target.pos.y);
             // look.forEach(function(lookObject) {
@@ -162,13 +160,14 @@ function claim(creep) {
     if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
       flag = actions.moveTo(creep, Game.flags[target], 'claim');
     } else {
-      if (creep.room.controller.owner == 'ioncache') {
+      creep.reserveController(creep.room.controller);
+      if (creep.room.controller.owner === 'ioncache') {
         log.info(`claim: I already own the controller in this room`);
         Game.flags[creep.memory.target].remove();
         creep.memory.target = null;
         creep.memory.task = null;
         flag = false;
-      } else if (Object.keys(Game.rooms).length < Game.gcl) {
+      } else if (Object.keys(Game.rooms).length < Game.gcl.level) { // TODO: fix, object.keys is wrong
         log.info(`claim: attempting to claim ${creep.memory.target}`);
         let claimResult = creep.claimController(creep.room.controller);
         switch (claimResult) {
@@ -203,7 +202,7 @@ function claim(creep) {
             log.info(`claim: unknown response '${claimResult}'`);
             flag = true;
         }
-      } else if (!creep.room.controller.reservation || creep.room.controller.username == 'ioncache') {
+      } else if (!creep.room.controller.reservation || creep.room.controller.username === 'ioncache') {
         log.info(`claim: reserving new controller`);
         let reserveController = creep.reserveController(creep.room.controller);
         flag = true;
@@ -224,7 +223,7 @@ function claim(creep) {
 function fillup(creep) {
   let flag;
 
-  if (creep.carry.energy == creep.carry.carryCapacity) {
+  if (creep.carry.energy === creep.carry.carryCapacity) {
     creep.memory.container = null;
     creep.memory.task = null;
     flag = false;
@@ -236,10 +235,10 @@ function fillup(creep) {
         filter: (structure) => {
           return (
             [
-              STRUCTURE_CONTAINER,
+              STRUCTURE_CONTAINER
             ].includes(structure.structureType) &&
             (
-              structure.id != controllerLink &&
+              structure.id !== controllerLink &&
               (
                 (structure.store && structure.store[RESOURCE_ENERGY] > 1) ||
                 structure.energy > 1
@@ -253,7 +252,7 @@ function fillup(creep) {
         if (i.store) {
           return i.store[RESOURCE_ENERGY];
         } else {
-          return i.energy
+          return i.energy;
         }
       });
       if (container) {
@@ -282,34 +281,31 @@ function fillup(creep) {
 function fix(creep) {
   let flag = true;
 
-  let maxHits = {
-    constructedWall: 5000,
-    rampart: 10000
-  };
-
-  if (creep.carry.energy == 0) {
+  if (creep.carry.energy === 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
   } else {
     let target;
 
-    if (creep.memory.task == 'fix' && creep.memory.target) {
+    if (creep.memory.task === 'fix' && creep.memory.target) {
       target = creep.memory.target;
       if (target) {
         let tempTarget = Game.getObjectById(target);
+
         if (
-          (maxHits[target.structureType] &&
-          target.hits > maxHits[target.structureType]) ||
-          target.hits >= target.hitsMax
+          (config.maxHits[tempTarget.structureType] &&
+          tempTarget.hits > config.maxHits[tempTarget.structureType]) ||
+          tempTarget.hits >= tempTarget.hitsMax
         ) {
+          log.info('fix: resetting target as it does not need fixing');
           target = null;
         }
       }
     }
 
     if (!target) {
-      target = helpers.getTarget(creep, 'fixable', { maxHits: maxHits });
+      target = helpers.getTarget(creep, 'fixable', { maxHits: config.maxHits });
     }
 
     // if there is no target at this point, no valid target was found
@@ -318,7 +314,7 @@ function fix(creep) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'fix') {
+      if (creep.memory.task !== 'fix') {
         creep.memory.task = 'fix';
         creep.say('fixing');
       }
@@ -346,16 +342,16 @@ function fix(creep) {
         case OK:
           log.info(`fix: fixing`);
           // reset task now if creep is out of energy after fix
-          if (creep.carry.energy == 0) {
+          if (creep.carry.energy === 0) {
             creep.memory.target = null;
             creep.memory.task = null;
           } else if ( // if stucture is at max desired health, remove target
-            maxHits[target.structureType] &&
-            target.hits > maxHits[target.structureType]
+            config.maxHits[target.structureType] &&
+            target.hits > config.maxHits[target.structureType]
           ) {
             creep.memory.target = null;
             creep.memory.task = null;
-          } else if (target.hits == target.hitsMax) { // if strucre full health, remove target
+          } else if (target.hits === target.hitsMax) { // if strucre full health, remove target
             creep.memory.target = null;
             creep.memory.task = null;
           }
@@ -377,7 +373,7 @@ function getWorkEnergy(creep) {
   let flag;
 
   let staticHarvesters = Object.keys(Game.creeps).filter((name) => {
-    return Game.creeps[name].memory.role == 'staticHarvester';
+    return Game.creeps[name].memory.role === 'staticHarvester';
   });
 
   let harvesters = Object.keys(Game.creeps).filter((name) => {
@@ -412,14 +408,14 @@ function guard(creep) {
 
   if (post) {
     creep.memory.post = post;
-    if (creep.memory.task != 'guard') {
+    if (creep.memory.task !== 'guard') {
       creep.memory.task = 'guard';
       creep.say('guarding');
     }
 
     let guardPosts = creep.room.find(FIND_FLAGS, {
       filter: (post) => {
-        return post.name == creep.memory.post;
+        return post.name === creep.memory.post;
       }
     });
 
@@ -437,7 +433,7 @@ function guard(creep) {
       creep.memory.task = null;
       creep.memory.post = null;
 
-      flag = false
+      flag = false;
     }
   } else {
     creep.memory.task = null;
@@ -454,7 +450,7 @@ function harvest(creep) {
   if (creep.carry.energy < creep.carryCapacity) {
     let target;
 
-    if (creep.memory.task == 'harvest' && creep.memory.target) {
+    if (creep.memory.task === 'harvest' && creep.memory.target) {
       // TODO: verify target
       target = creep.memory.target;
     }
@@ -470,7 +466,7 @@ function harvest(creep) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'harvest') {
+      if (creep.memory.task !== 'harvest') {
         creep.memory.task = 'harvest';
         creep.say('harvesting');
       }
@@ -551,7 +547,7 @@ function pickup(creep) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'pickup') {
+      if (creep.memory.task !== 'pickup') {
         creep.memory.task = 'pickup';
         creep.say('grabbing');
       }
@@ -621,7 +617,7 @@ function recycle(creep) {
     }
   }
 
-  if (creep.pos.getRangeTo(spawn) > 1) {
+  if (!creep.pos.isNearTo(spawn)) {
     flag = actions.moveTo(creep, spawn, 'recycle');
   } else {
     if (creep.carry.energy) {
@@ -648,18 +644,18 @@ function recycle(creep) {
 function renew(creep, nextTask) {
   let flag;
 
-  if (creep.memory.task == 'renew' || creep.ticksToLive < 300) {
-    if (creep.memory.task != 'renew') {
+  if (creep.memory.task === 'renew' || creep.ticksToLive < 300) {
+    if (creep.memory.task !== 'renew') {
       creep.memory.task = 'renew';
       creep.say('renewing');
     }
 
     let spawn = Game.getObjectById(creep.memory.target);
 
-    if (!spawn || spawn.structureType != 'spawn') {
+    if (!spawn || spawn.structureType !== 'spawn') {
       spawn = helpers.getTarget(creep, 'spawn');
       creep.memory.target = spawn;
-      spawn = Game.getObjectById(creep.memory.target)
+      spawn = Game.getObjectById(creep.memory.target);
     }
 
     if (spawn) {
@@ -715,7 +711,7 @@ function staticHarvest(creep) {
   let flag;
 
   if (creep.memory.isStatic) {
-    if (!creep.memory.task == 'staticHarvest') {
+    if (!creep.memory.task === 'staticHarvest') {
       creep.memory.task = 'staticHarvest';
       creep.say('staticy!');
     }
@@ -747,8 +743,8 @@ function staticHarvest(creep) {
           FIND_STRUCTURES, {
             filter: (s) => {
               return (
-                s.structureType == STRUCTURE_LINK &&
-                creep.pos.getRangeTo(s) == 1 &&
+                s.structureType === STRUCTURE_LINK &&
+                creep.pos.getRangeTo(s) === 1 &&
                 container.pos.getRangeTo(s) <= 2
               );
             }
@@ -760,14 +756,17 @@ function staticHarvest(creep) {
         }
       }
 
-      creep.memory.source = source;
       creep.memory.container = container;
       creep.memory.link = link;
-      let sourceTarget = Game.getObjectById(source);
+      creep.memory.source = source;
       let containerTarget = Game.getObjectById(container);
       let linkTarget = Game.getObjectById(link);
+      let sourceTarget = Game.getObjectById(source);
+      let staticTarget = Game.flags[creep.memory.staticTarget];
 
-      if (creep.pos.getRangeTo(sourceTarget) > 1) {
+      if (staticTarget && !creep.pos.isNearTo(staticTarget)) {
+        flag = actions.moveTo(creep, staticTarget, 'staticHarvest');
+      } else if (!creep.pos.isNearTo(sourceTarget)) {
         flag = actions.moveTo(creep, sourceTarget, 'staticHarvest');
       } else {
         // harvest
@@ -782,7 +781,7 @@ function staticHarvest(creep) {
       }
 
       // if source is out of energy, do a renew if needed
-      if (sourceTarget.energy == 0 && creep.ticksToLive < 600) {
+      if (sourceTarget.energy === 0 && creep.ticksToLive < 600) {
         creep.memory.task = 'renew';
         creep.memory.target = null;
         flag = true;
@@ -799,7 +798,7 @@ function staticHarvest(creep) {
 
       let staticTarget = Game.flags[target];
       flag = actions.moveTo(creep, staticTarget, 'staticHarvest');
-      if (creep.pos.getRangeTo(staticTarget) == 0) {
+      if (creep.pos.getRangeTo(staticTarget) === 0) {
         creep.memory.isStatic = true;
       }
     } else {
@@ -818,14 +817,14 @@ function transferStorage(creep) {
 function transfer(creep, storageTarget) {
   let flag = true;
 
-  if (creep.carry.energy == 0) {
+  if (creep.carry.energy === 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
   } else {
     let target;
 
-    if (creep.memory.task == 'transfer' && creep.memory.target) {
+    if (creep.memory.task === 'transfer' && creep.memory.target) {
       target = creep.memory.target;
       let tempTarget = Game.getObjectById(target);
 
@@ -860,7 +859,7 @@ function transfer(creep, storageTarget) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'transfer') {
+      if (creep.memory.task !== 'transfer') {
         creep.memory.task = 'transfer';
         creep.say('giving');
       }
@@ -868,12 +867,12 @@ function transfer(creep, storageTarget) {
       target = Game.getObjectById(target);
 
       let transferType;
-      if (target.structureType == STRUCTURE_STORAGE) {
+      if (target.structureType === STRUCTURE_STORAGE) {
         if (creep.carry[RESOURCE_ENERGY]) {
           transferType = RESOURCE_ENERGY;
         } else {
           for (let carryType in creep.carry) {
-            if (carryType != RESOURCE_ENERGY) {
+            if (carryType !== RESOURCE_ENERGY) {
               transferType = carryType;
             }
           }
@@ -885,7 +884,7 @@ function transfer(creep, storageTarget) {
       flag = actions.transfer(creep, target, 'transfer', transferType);
 
       // stay here and keep depositing if the creep is still carrying anything
-      if (!_.sum(creep.carry) == 0 && target.structureType) {
+      if (!_.sum(creep.carry) === 0 && target.structureType) {
         creep.memory.task = 'transfer';
       }
     }
@@ -899,7 +898,6 @@ function transferResources(creep) {
   let flag;
 
   if (
-    _.sum(creep.carry) > 0 &&
     Object.keys(creep.carry).length > 1
   ) {
     let target = creep.room.storage;
@@ -907,8 +905,12 @@ function transferResources(creep) {
     if (!target) {
       flag = false;
     } else {
+      if (creep.memory.task !== 'transferResources') {
+        creep.memory.task = 'transferResources';
+      }
+
       for (let type in creep.carry) {
-        if (type == 'energy') {
+        if (type === 'energy') {
           continue;
         }
 
@@ -918,6 +920,70 @@ function transferResources(creep) {
         }
       }
     }
+  } else {
+    let controllerLink = helpers.getTarget(creep, 'controllerLink');
+    let resourceContainer;
+
+    if (creep.memory.target) {
+      resourceContainer = Game.getObjectById('creep.memory.target');
+    }
+
+    if (!resourceContainer) {
+      creep.memory.target = null;
+
+      let resourceContainers = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+            [
+              STRUCTURE_CONTAINER
+            ].includes(structure.structureType) &&
+            (
+              structure.id !== controllerLink &&
+              Object.keys(structure.store).length > 1
+            )
+          );
+        }
+      });
+
+      if (resourceContainers.length > 0) {
+        resourceContainers.sort((a, b) => {
+          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+        });
+        resourceContainer = resourceContainers[0];
+      }
+    }
+
+    if (resourceContainer) {
+      if (creep.memory.task !== 'transferResources') {
+        creep.memory.task = 'transferResources';
+      }
+      creep.memory.target = resourceContainer.id;
+
+      if (!creep.pos.isNearTo(resourceContainer)) {
+        flag = actions.moveTo(creep, resourceContainer, 'transferResources');
+      } else {
+        for (let type in resourceContainer.store) {
+          if (type === 'energy') {
+            continue;
+          }
+
+          flag = actions.withdraw(creep, resourceContainer, 'transferResource', type);
+          // if (flag) {
+          //   break;
+          // }
+        }
+
+        if (_.sum(creep.carry) >= creep.carryCapacity) {
+          creep.memory.target = null;
+          creep.memory.task = null;
+          flag = true;
+        }
+      }
+    } else {
+      creep.memory.target = null;
+      creep.memory.task = null;
+      flag = false;
+    }
   }
 
   return flag;
@@ -926,12 +992,12 @@ function transferResources(creep) {
 function upgrade(creep) {
   let flag = true;
 
-  if (creep.carry.energy == 0) {
+  if (creep.carry.energy === 0) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
   } else {
-    if (creep.memory.task != 'upgrade') {
+    if (creep.memory.task !== 'upgrade') {
       creep.memory.task = 'upgrade';
       creep.say('upgrading');
     }
@@ -952,7 +1018,7 @@ function upgrade(creep) {
       case OK:
         log.info(`upgrade: controller is being enhanced`);
         // reset task now if creep is out of energy after upgrade
-        if (creep.carry.energy == 0) {
+        if (creep.carry.energy === 0) {
           creep.memory.target = null;
           creep.memory.task = null;
         }
@@ -979,14 +1045,14 @@ function withdraw(creep) {
   } else {
     let target;
 
-    if (creep.memory.task == 'withdraw' && creep.memory.target) {
+    if (creep.memory.task === 'withdraw' && creep.memory.target) {
       target = creep.memory.target;
       let tempTarget = Game.getObjectById(target);
 
       // if the current target is now empty, we can look for a new target
       if (
-        tempTarget.energy == 0 ||
-        (tempTarget.store && tempTarget.store.energy == 0)
+        tempTarget.energy === 0 ||
+        (tempTarget.store && tempTarget.store.energy === 0)
       ) {
         target = null;
       }
@@ -1006,7 +1072,7 @@ function withdraw(creep) {
       flag = false;
     } else {
       creep.memory.target = target;
-      if (creep.memory.task != 'withdraw') {
+      if (creep.memory.task !== 'withdraw') {
         creep.memory.task = 'withdraw';
         creep.say('taking');
       }
@@ -1027,7 +1093,7 @@ module.exports = {
   fillup: fillup,
   fix: fix,
   getWorkEnergy: getWorkEnergy,
-  guard:  guard,
+  guard: guard,
   harvest: harvest,
   motivate: motivate,
   parking: parking,
@@ -1041,5 +1107,5 @@ module.exports = {
   transferResources: transferResources,
   transferStorage: transferStorage,
   withdraw: withdraw,
-  upgrade:  upgrade
+  upgrade: upgrade
 };

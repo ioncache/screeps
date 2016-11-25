@@ -4,22 +4,11 @@ let log = require('logger');
 let strings = require('strings');
 
 function calculateCreepCost(parts) {
-  let costs = {
-    attack: 80,
-    carry: 50,
-    claim: 600,
-    heal: 250,
-    move: 50,
-    ranged_attack: 150,
-    tough: 10,
-    work: 100
-  }
-
   let cost = 0;
 
   for (let part of parts) {
-    if (costs[part]) {
-      cost += costs[part];
+    if (BODYPART_COST[part]) {
+      cost += BODYPART_COST[part];
     }
   }
 
@@ -64,7 +53,7 @@ function getTarget(creep, type, opts = {}) {
         FIND_STRUCTURES, {
           filter: (s) => {
             return (
-              s.structureType == STRUCTURE_LINK &&
+              s.structureType === STRUCTURE_LINK &&
               creep.room.controller.pos.getRangeTo(s) <= 3
             );
           }
@@ -93,7 +82,7 @@ function getTarget(creep, type, opts = {}) {
               return opts.types.includes(structure.structureType);
             } else {
               return (
-                structure.structureType != STRUCTURE_LINK &&
+                structure.structureType !== STRUCTURE_LINK &&
                 structure.energyCapacity > 0 &&
                 structure.energy < structure.energyCapacity
               );
@@ -139,7 +128,7 @@ function getTarget(creep, type, opts = {}) {
                 ].includes(store.structureType) &&
                 (
                   store.energy >= 50 ||
-                  ( store.store && store.store[RESOURCE_ENERGY] >= 50 )
+                  (store.store && store.store[RESOURCE_ENERGY] >= 50)
                 )
               );
             }
@@ -185,7 +174,7 @@ function getTarget(creep, type, opts = {}) {
 
       let guards = creep.room.find(FIND_MY_CREEPS, {
         filter: (guard) => {
-          return guard.memory.role == 'guard';
+          return guard.memory.role === 'guard';
         }
       });
 
@@ -233,14 +222,16 @@ function getTarget(creep, type, opts = {}) {
                   targetedSources[sources[i].id] = {
                     count: 0,
                     index: i
-                  }
+                  };
                 }
 
                 for (let creepName in Game.creeps) {
-                  let creep = Game.creeps[creepName];
+                  if (Game.creeps[creepName]) {
+                    let creep = Game.creeps[creepName];
 
-                  if (_.map(sources, 'id').includes(creep.memory.target)) {
-                    targetedSources[creep.memory.target].count += 1;
+                    if (_.map(sources, 'id').includes(creep.memory.target)) {
+                      targetedSources[creep.memory.target].count += 1;
+                    }
                   }
                 }
 
@@ -288,7 +279,7 @@ function getTarget(creep, type, opts = {}) {
           {
             filter: (storage) => {
               return (
-                storage.structureType == STRUCTURE_STORAGE &&
+                storage.structureType === STRUCTURE_STORAGE &&
                 _.sum(storage.store) < storage.storeCapacity
               );
             }
@@ -312,7 +303,7 @@ function getTarget(creep, type, opts = {}) {
 
       let staticHarvesters = creep.room.find(FIND_MY_CREEPS, {
         filter: (found) => {
-          return found.memory.role == 'staticHarvester';
+          return found.memory.role === 'staticHarvester';
         }
       });
 

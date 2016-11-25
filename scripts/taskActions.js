@@ -98,7 +98,7 @@ function transfer(creep, target, task, type = RESOURCE_ENERGY) {
     case OK:
       log.info(`${task}: transferring to structure`);
       // reset task now if creep is out of energy after transfer
-      if (creep.carry[type] == 0) {
+      if (creep.carry[type] === 0) {
         creep.memory.target = null;
         creep.memory.task = null;
       }
@@ -114,14 +114,14 @@ function transfer(creep, target, task, type = RESOURCE_ENERGY) {
   return flag;
 }
 
-function withdraw(creep, target, task) {
+function withdraw(creep, target, task, type = RESOURCE_ENERGY) {
   let flag;
 
-  let result = creep.withdraw(target, RESOURCE_ENERGY);
+  let result = creep.withdraw(target, type);
 
   switch (result) {
     case ERR_FULL:
-      log.info(`${task}: creep full of energy`);
+      log.info(`${task}: creep full of ${type}`);
       creep.memory.target = null;
       flag = false;
       break;
@@ -133,7 +133,7 @@ function withdraw(creep, target, task) {
       flag = false;
       break;
     case ERR_NOT_ENOUGH_RESOURCES:
-      log.info(`${task}: store is out of resources`);
+      log.info(`${task}: store is out of resource ${type}`);
       creep.memory.target = null;
       flag = false;
       break;
@@ -147,8 +147,8 @@ function withdraw(creep, target, task) {
         creep.memory.target = null;
         creep.memory.task = null;
       } else if (
-        target.energy == 0 ||
-        (target.store && target.store[RESOURCE_ENERGY] == 0)
+        target[type] === 0 ||
+        (target.store && target.store[type] === 0)
       ) { // reset if if current target is out of energy
         creep.memory.target = helpers.getTarget(creep, 'energyStore');
         if (!creep.memory.target) {
