@@ -98,7 +98,7 @@ class RoomManager {
           // }
           // catch (err) {
           //   console.log(err);
-          //   log.error(name, err);
+          //   log.error(creepName, err);
           // }
         }
       }
