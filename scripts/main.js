@@ -31,7 +31,7 @@ module.exports.loop = function() {
   // ensure all rooms have a room manager instantiated
   for (let roomName in Game.rooms) {
     if (!roomList[roomName]) {
-      let newRoom = new RoomManager(Game.rooms[roomName]);
+      let newRoom = new RoomManager(roomName);
       roomList[roomName] = newRoom;
     }
 

@@ -54,19 +54,25 @@ module.exports = {
       builder: {
         class: 'builder',
         min: 1,
-        parts: [WORK, CARRY, MOVE, MOVE],
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
+        priority: 3
+      },
+      fixer: {
+        class: 'fixer',
+        min: 1,
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         priority: 3
       },
       harvester: {
         class: 'harvester',
         min: 1,
-        parts: [WORK, CARRY, MOVE, MOVE],
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         priority: 1
       },
       upgrader: {
         class: 'upgrader',
         min: 1,
-        parts: [WORK, CARRY, MOVE, MOVE],
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         priority: 2
       }
     }

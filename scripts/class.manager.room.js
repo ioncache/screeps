@@ -17,10 +17,11 @@ let classes = {
 };
 
 class RoomManager {
-  constructor(room = {}) {
+  constructor(roomName) {
     this.active = false;
     this.creepList = {};
-    this.room = room;
+    this.roomName = roomName;
+    this.room = Game.rooms[this.roomName];
 
     if (
       this.room.memory &&
@@ -33,6 +34,8 @@ class RoomManager {
   }
 
   manage() {
+    this.room = Game.rooms[this.roomName];
+
     if (this.active) {
       // keep local creep list in sync
 
