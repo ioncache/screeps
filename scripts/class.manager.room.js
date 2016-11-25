@@ -92,7 +92,7 @@ class RoomManager {
     for (let creepName in this.creepList) {
       if (this.creepList[creepName]) {
         let creepObject = this.creepList[creepName];
-        if (Game.creeps[creepName].spawning) {
+        if (!Game.creeps[creepName].spawning) {
           // try {
             creepObject.activate();
           // }

@@ -54,19 +54,19 @@ module.exports = {
       builder: {
         class: 'builder',
         min: 1,
-        parts: [WORK, CARRY, MOVE],
+        parts: [WORK, CARRY, MOVE, MOVE],
         priority: 3
       },
       harvester: {
         class: 'harvester',
         min: 1,
-        parts: [WORK, CARRY, MOVE],
+        parts: [WORK, CARRY, MOVE, MOVE],
         priority: 1
       },
       upgrader: {
         class: 'upgrader',
         min: 1,
-        parts: [WORK, CARRY, MOVE],
+        parts: [WORK, CARRY, MOVE, MOVE],
         priority: 2
       }
     }
