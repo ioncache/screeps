@@ -15,6 +15,8 @@ TODO: this should be changed to return something more along the lines of:
 
 some of the tasks could end up doing 1 or both of the types of creep actions
 
+INFO:
+
 */
 
 let actions = require('taskActions');
