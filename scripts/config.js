@@ -13,12 +13,6 @@ module.exports = {
         min: 3,
         priority: 3
       },
-      builderBasic: {
-        class: 'builder',
-        min: 0,
-        parts: [WORK, CARRY, MOVE],
-        priority: 3
-      },
       courier: {
         class: 'courier',
         min: 0,
@@ -27,12 +21,6 @@ module.exports = {
       fixer: {
         class: 'fixer',
         min: 2,
-        priority: 4
-      },
-      fixerBasic: {
-        class: 'fixer',
-        min: 0,
-        parts: [WORK, CARRY, MOVE],
         priority: 4
       },
       guard: {
@@ -44,12 +32,6 @@ module.exports = {
         class: 'harvester',
         defaultMin: 8,
         min: 8,
-        priority: 1
-      },
-      harvesterBasic: {
-        class: 'harvester',
-        min: 0,
-        parts: [WORK, CARRY, MOVE],
         priority: 1
       },
       pioneer: {
@@ -65,12 +47,6 @@ module.exports = {
       upgrader: {
         class: 'upgrader',
         min: 3,
-        priority: 2
-      },
-      upgraderBasic: {
-        class: 'upgrader',
-        min: 0,
-        parts: [WORK, CARRY, MOVE],
         priority: 2
       }
     },
@@ -95,6 +71,7 @@ module.exports = {
       }
     }
   },
+  masterSpawn: 'Spawn1',
   maxHits: {
     constructedWall: 5000,
     rampart: 10000

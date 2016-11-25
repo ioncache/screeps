@@ -315,9 +315,15 @@ class RoomManager {
   }
 
   spawnCreeps() {
+    let spawn;
     let spawns = this.room.find(FIND_MY_SPAWNS);
+    if (spawns) {
+      spawn = spawns[0]; // TODO: handle multiple spawns in same room
+    } else {
+      spawn = Game.spawns[config.masterSpawn];
+    }
 
-    if (spawns.length > 0) {
+    if (spawn) {
       let roles = Object.keys(this.creepConfig).sort((a, b) => {
         return this.creepConfig[a].priority - this.creepConfig[b].priority;
       });
@@ -328,7 +334,6 @@ class RoomManager {
         });
 
         if (creeps.length < this.creepConfig[role].min) {
-          let spawn = spawns[0]; // TODO: handle multiple spawns in same room
           let creepClass = classes[this.creepConfig[role].class];
           let newCreep = new creepClass(role);
           let parts = this.creepConfig[role].parts || newCreep.parts;
