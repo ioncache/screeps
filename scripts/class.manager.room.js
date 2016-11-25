@@ -28,7 +28,7 @@ class RoomManager {
       this.room.memory.level &&
       config.creepConfigMaster[this.room.memory.level]
     ) {
-      this.creepConfig = _.deepCopy(config.creepConfigMaster[this.room.memory.level]);
+      this.creepConfig = _.cloneDeep(config.creepConfigMaster[this.room.memory.level]);
       this.active = true;
     }
   }
@@ -36,6 +36,14 @@ class RoomManager {
   manage() {
     if (this.active) {
       // keep local creep list in sync
+
+      for (let name in this.creepList) {
+        if (!Game.creeps[name]) {
+          delete this.creepList[name];
+          log.log('Clearing non-existing creep from room creep list:', name);
+        }
+      }
+
       let creeps = _.filter(Game.creeps, (creep) => {
         return creep.memory.homeRoom === this.room.name;
       });
@@ -83,7 +91,7 @@ class RoomManager {
     for (let creepName in this.creepList) {
       if (this.creepList[creepName]) {
         let creepObject = this.creepList[creepName];
-        if (!creepObject.creep.spawning) {
+        // if (!creepObject.creep.spawning) {
           // try {
             creepObject.activate();
           // }
@@ -91,7 +99,7 @@ class RoomManager {
           //   console.log(err);
           //   log.error(name, err);
           // }
-        }
+        // }
       }
     }
   }
@@ -194,7 +202,7 @@ class RoomManager {
 
   currentPopulation() {
     let roles = Object.keys(this.creepConfig).sort((a, b) => {
-      return this.creepConfig[a].role.localeCompare(this.creepConfig[b].role);
+      return a.localeCompare(b);
     });
 
     for (let role of roles) {
@@ -216,15 +224,15 @@ class RoomManager {
 
   managePopulation() {
     // manage # of fixers based on towers
-    if (this.config.fixer && this.config.fixer.currentCount > 0) {
-      let towers = this.room.find(FIND_STRUCTURES, {
+    if (this.creepConfig.fixer) {
+      let towers = this.room.find(FIND_MY_STRUCTURES, {
         filter: (structure) => {
           return structure.structureType === STRUCTURE_TOWER;
         }
       });
 
       if (towers.length > 0)  {
-        this.config.fixer.min = 0;
+        this.creepConfig.fixer.min = 0;
         let fixers = _.filter(Game.creeps, (creep) => {
           return creep.room.name === this.room.name && creep.memory.role === 'fixer';
         });
@@ -257,15 +265,15 @@ class RoomManager {
     }
 
     // manage static harvester populaation based on StaticHarvestFlags present
-    let staticHarvestLocations = Game.rooms[name].find(FIND_FLAGS, {
+    let staticHarvestLocations = this.room.find(FIND_FLAGS, {
       filter: (flag) => {
         return /^StaticHarvest/.test(flag.name);
       }
     });
 
     // manage regular harvester population based on # of static harvesters
-    this.config.staticHarvester.min = staticHarvestLocations.length;
-    this.config.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
+    this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
+    this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
     // always keep 1 harvester around
     this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
 
@@ -363,8 +371,9 @@ class RoomManager {
                 log.log(`spawn: unknown response from spawn: ${newName}`);
             }
           } else {
-            log.log(`spawn: not enough energy for '${role}': current: ${spawn.room.energyAvailable}
-            -- cost: ${cost} -- desired: ${desiredEnergy}`);
+            let message = `spawn: not enough energy for '${role}': current: ${spawn.room.energyAvailable}`;
+            message = `${message} -- cost: ${cost} -- desired: ${desiredEnergy}`;
+            log.log(message);
             skipSpawn = true;
           }
 
