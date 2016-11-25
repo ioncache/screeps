@@ -204,7 +204,10 @@ function claim(creep) {
             log.info(`claim: unknown response '${claimResult}'`);
             flag = true;
         }
-      } else if (!Game.rooms[creep.memory.homeRoom].controller.reservation || Game.rooms[creep.memory.homeRoom].controller.username === 'ioncache') {
+      } else if (
+        !Game.rooms[creep.memory.homeRoom].controller.reservation ||
+        Game.rooms[creep.memory.homeRoom].controller.username === config.masterOwner
+      ) {
         log.info(`claim: reserving new controller`);
         let reserveController = creep.reserveController(Game.rooms[creep.memory.homeRoom].controller);
         flag = true;
@@ -236,17 +239,10 @@ function fillup(creep) {
       let containers = Game.rooms[creep.memory.homeRoom].find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
-            structure.room.name == creep.memory.homeRoom &&
-            [
-              STRUCTURE_CONTAINER
-            ].includes(structure.structureType) &&
-            (
-              structure.id !== controllerLink &&
-              (
-                (structure.store && structure.store[RESOURCE_ENERGY] > 1) ||
-                structure.energy > 1
-              )
-            )
+            structure.room.name === creep.memory.homeRoom &&
+            structure.structureType === STRUCTURE_CONTAINER &&
+            structure.id !== controllerLink &&
+            structure.store[RESOURCE_ENERGY] > 1
           );
         }
       });
@@ -483,8 +479,12 @@ function harvest(creep) {
     creep.memory.target = null;
     // move away from the source if the creep was near one
     if (creep.memory.nearSource) {
-      helpers.moveAwayFromSource(creep, creep.memory.nearSource);
-      creep.memory.nearSource = null;
+      let source = Game.getObjectById(creep.memory.nearSource);
+      if (creep.pos.getRangeTo(source) < 2) {
+        helpers.moveAwayFromSource(creep, creep.memory.nearSource);
+      } else {
+        creep.memory.nearSource = null;
+      }
       flag = true;
     } else {
       flag = false;
@@ -506,7 +506,7 @@ function parking(creep) {
   let parking =  creep.pos.findClosestByRange(FIND_FLAGS, {
     filter: (flag) => {
       return (
-        flag.room.name == creep.memory.homeRoom &&
+        flag.room.name === creep.memory.homeRoom &&
         /^ParkingArea/.test(flag.name)
       );
     }
@@ -732,7 +732,15 @@ function staticHarvest(creep) {
       container = helpers.getTarget(
         creep,
         'energyHolder',
-        { nearest: true, types: [STRUCTURE_CONTAINER] }
+        {
+          filter: (i) => {
+            return (
+              i.room.name === creep.memory.homeRoom &&
+              [STRUCTURE_CONTAINER].includes(i.structureType)
+            );
+          },
+          nearest: true
+        }
       );
     }
 
@@ -749,7 +757,7 @@ function staticHarvest(creep) {
           FIND_STRUCTURES, {
             filter: (s) => {
               return (
-                s.room.name == creep.memory.homeRoom &&
+                s.room.name === creep.memory.homeRoom &&
                 s.structureType === STRUCTURE_LINK &&
                 creep.pos.getRangeTo(s) === 1 &&
                 container.pos.getRangeTo(s) <= 2
@@ -780,7 +788,11 @@ function staticHarvest(creep) {
         flag = actions.harvest(creep, sourceTarget, 'staticHarvest');
 
         // transfer
-        if (linkTarget && Game.rooms[creep.memory.homeRoom].energyAvailable >= 500) { // use link when there is prolific energy
+        if (
+          linkTarget &&
+          Game.rooms[creep.memory.homeRoom].energyAvailable >= 500 &&
+          linkTarget.energyCapacity - linkTarget.energy >= creep.carry.energy
+        ) { // use link when there is prolific energy
           flag = actions.transfer(creep, linkTarget, 'staticHarvest');
         } else {
           flag = actions.transfer(creep, containerTarget, 'staticHarvest');

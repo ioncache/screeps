@@ -138,10 +138,13 @@ class RoomManager {
           // use 100 as there is a 3% energy loss per transfer
           // and 3% of 100 is a whole number
           link.energy >= 100 &&
-          link.cooldown === 0 &&
-          link.energy <= controllerLink.energyCapacity - controllerLink.energy
+          link.cooldown === 0
         ) {
-          link.transferEnergy(controllerLink);
+          let amount = _.min([
+            link.energy,
+            Math.floor((controllerLink.energyCapacity - controllerLink.energy) / 100) * 100
+          ]);
+          link.transferEnergy(controllerLink, amount);
         }
       }
     }
@@ -231,14 +234,20 @@ class RoomManager {
     if (this.creepConfig.fixer) {
       let towers = this.room.find(FIND_MY_STRUCTURES, {
         filter: (structure) => {
-          return structure.structureType === STRUCTURE_TOWER;
+          return (
+            structure.room.name === this.room.name &&
+            structure.structureType === STRUCTURE_TOWER
+          );
         }
       });
 
       if (towers.length > 0)  {
         this.creepConfig.fixer.min = 0;
         let fixers = _.filter(Game.creeps, (creep) => {
-          return creep.room.name === this.room.name && creep.memory.role === 'fixer';
+          return (
+            this.room.name === creep.memory.homeRoom &&
+            creep.memory.role === 'fixer'
+          );
         });
         for (let fixer of fixers) {
           fixer.memory.task = 'recycle';

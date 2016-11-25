@@ -55,29 +55,30 @@ module.exports = {
         class: 'builder',
         min: 1,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-        priority: 3
+        priority: 2
       },
       fixer: {
         class: 'fixer',
         min: 1,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-        priority: 3
+        priority: 4
       },
       harvester: {
         class: 'harvester',
         min: 1,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-        priority: 1
+        priority: 3
       },
       upgrader: {
         class: 'upgrader',
         min: 1,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-        priority: 2
+        priority: 1
       }
     }
   },
   masterSpawn: 'Spawn1',
+  masterOWner: 'ioncache',
   maxHits: {
     constructedWall: 5000,
     rampart: 10000
