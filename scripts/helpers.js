@@ -324,7 +324,7 @@ function getTarget(creep, type, opts = {}) {
           storage = storages[0];
         }
       } else {
-        // TODO: check if st is full (unlikely anytime soon with 1M capacity)
+        // TODO: check if is full (unlikely anytime soon with 1M capacity)
         storage = Game.rooms[creep.memory.homeRoom].storage;
       }
 

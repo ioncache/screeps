@@ -751,6 +751,12 @@ function staticHarvest(creep) {
       log.info(`staticHarvest: no container available`);
       flag = false;
     } else {
+      creep.memory.container = container;
+      creep.memory.source = source;
+      let containerTarget = Game.getObjectById(container);
+      let sourceTarget = Game.getObjectById(source);
+      let staticTarget = Game.flags[creep.memory.staticTarget];
+
       let link = creep.memory.link;
       if (!link && container) {
         link = creep.pos.findClosestByRange(
@@ -760,7 +766,7 @@ function staticHarvest(creep) {
                 s.room.name === creep.memory.homeRoom &&
                 s.structureType === STRUCTURE_LINK &&
                 creep.pos.getRangeTo(s) === 1 &&
-                container.pos.getRangeTo(s) <= 2
+                containerTarget.pos.getRangeTo(s) <= 2
               );
             }
           }
@@ -771,13 +777,8 @@ function staticHarvest(creep) {
         }
       }
 
-      creep.memory.container = container;
       creep.memory.link = link;
-      creep.memory.source = source;
-      let containerTarget = Game.getObjectById(container);
       let linkTarget = Game.getObjectById(link);
-      let sourceTarget = Game.getObjectById(source);
-      let staticTarget = Game.flags[creep.memory.staticTarget];
 
       if (staticTarget && !creep.pos.isNearTo(staticTarget)) {
         flag = actions.moveTo(creep, staticTarget, 'staticHarvest');
