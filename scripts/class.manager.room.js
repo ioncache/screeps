@@ -192,7 +192,7 @@ class RoomManager {
             {
               filter: (structure) => {
                 if (config.maxHits[structure.structureType]) {
-                  return structure.hits < config.maxHits[structure.structureType];
+                  return structure.hits < config.maxHits[structure.structureType](creep);
                 } else {
                   return structure.hits < structure.hitsMax;
                 }

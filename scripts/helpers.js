@@ -238,7 +238,7 @@ function getTarget(creep, type, opts = {}) {
             if (maxHits[structure.structureType]) {
               return (
                 structure.room.name === creep.memory.homeRoom &&
-                structure.hits < maxHits[structure.structureType]
+                structure.hits < maxHits[structure.structureType](creep)
               );
             } else {
               return (
@@ -401,12 +401,6 @@ function getTarget(creep, type, opts = {}) {
 
       if (storage) {
         target = storage.id;
-      } else {
-        storage = Game.spawns[config.masterSpawn].room.storage;
-
-        if (storage) {
-          target = storage.id;
-        }
       }
 
       break;

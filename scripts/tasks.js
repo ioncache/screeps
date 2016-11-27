@@ -290,7 +290,7 @@ function fix(creep) {
 
         if (
           (config.maxHits[tempTarget.structureType] &&
-          tempTarget.hits > config.maxHits[tempTarget.structureType]) ||
+          tempTarget.hits > config.maxHits[tempTarget.structureType](creep)) ||
           tempTarget.hits >= tempTarget.hitsMax
         ) {
           log.info('fix: resetting target as it does not need fixing');
@@ -342,7 +342,7 @@ function fix(creep) {
             creep.memory.task = null;
           } else if ( // if stucture is at max desired health, remove target
             config.maxHits[target.structureType] &&
-            target.hits > config.maxHits[target.structureType]
+            target.hits > config.maxHits[target.structureType](creep)
           ) {
             creep.memory.target = null;
             creep.memory.task = null;

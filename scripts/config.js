@@ -122,7 +122,11 @@ module.exports = {
   masterSpawn: 'Spawn1',
   masterOwner: 'ioncache',
   maxHits: {
-    constructedWall: 5000,
-    rampart: 10000
+    constructedWall: function(creep) {
+      return creep.room.controller.level * 2500;
+    },
+    rampart: function(creep) {
+      return creep.room.controller.level * 2500;
+    }
   }
 };
