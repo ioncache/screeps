@@ -280,29 +280,9 @@ class RoomManager {
 
     // make 1 miner per valid extraction site
     if (this.creepConfig.miner) {
-      let resources = '';
       let extractionSites = this.room.find(FIND_STRUCTURES, {
         filter: (s) => {
-          let closeContainer = s.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (i) => {
-              return (
-                i.structureType === STRUCTURE_CONTAINER &&
-                s.pos.getRangto(i) <= 1
-              );
-            }
-          });
-
-          let closeResource = s.pos.findClosestByRange(FIND_MINERALS, {
-            filter: (i) => {
-              return s.pos.getRangto(i) === 0;
-            }
-          });
-
-          return (
-            s.structureType === STRUCTURE_EXTRACTOR &&
-            closeContainer &&
-            (closeResource && closeResource.amount > 0)
-          );
+          return s.structureType === STRUCTURE_EXTRACTOR;
         }
       });
 

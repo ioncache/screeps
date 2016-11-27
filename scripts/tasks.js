@@ -497,9 +497,76 @@ function mine(creep) {
   let flag;
 
   if (!creep.memory.extractionSite) {
+    let currentlyTargetedExtractionSites = Object.keys(Game.creeps)
+    .filter((creepName) => {
+      return Game.creeps[creepName].memory.role === 'miner';
+    }).map((creepName) => {
+      return Game.creeps[creepName].memory.extractionSite;
+    });
+    let extractionSite = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+      filter: (s) => {
+        return (
+          s.structureType === STRUCTURE_EXTRACTOR &&
+          !currentlyTargetedExtractionSites.includes(s.id)
+        );
+      }
+    });
 
+    if (!extractionSite) {
+      log.info('mine: no valid extraction site available');
+      creep.memory.task = null;
+      creep.memory.container = null;
+      flag = false;
+    } else {
+      creep.memory.task = 'mine';
+      creep.memory.extractionSite = extractionSite.id;
+      flag = mine(creep);
+    }
   } else {
+    let extractionSite = Game.getObjectById(creep.memory.extractionSite);
 
+    if (!extractionSite) {
+      log.info('mine: selected site no longer exists');
+      creep.memory.task = null;
+      creep.memory.extractionSite = null;
+      creep.memory.container = null;
+      flag = false;
+    } else {
+      let container = Game.getObjectById(creep.memory.container);
+      if (!container) {
+        container = extractionSite.pos.findClosestByRange(FIND_STRUCTURES, {
+          filter: (s) => {
+            return (
+              s.structureType === STRUCTURE_CONTAINER &&
+              extractionSite.pos.inRangeTo(s, 2)
+            );
+          }
+        });
+      }
+
+      if (!container) {
+        log.info('mine: no valid containers near extraction site');
+        creep.memory.task = null;
+        creep.memory.extractionSite = null;
+        creep.memory.container = null;
+        flag = false;
+      } else {
+        creep.memory.container = container.id;
+      }
+
+      if (!creep.pos.isNearTo(extractionSite)) {
+        flag = actions.moveTo(creep, extractionSite, 'mine');
+      } else {
+        flag = actions.harvest(creep, extractionSite, 'mine');
+        let resourceTypes = Object.keys(creep.carry)
+        .filter((i) => {
+          return i !== RESOURCE_ENERGY;
+        });
+        if (resourceTypes) {
+          flag = actions.transfer(creep, container, 'mine', resourceTypes[0]);
+        }
+      }
+    }
   }
 
   return flag;
