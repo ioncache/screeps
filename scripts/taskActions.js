@@ -125,7 +125,7 @@ function transfer(creep, target, task, type = RESOURCE_ENERGY) {
   return flag;
 }
 
-function withdraw(creep, target, task, type = RESOURCE_ENERGY) {
+function withdraw(creep, target, task, type = RESOURCE_ENERGY, initialTargetOnly = false) {
   let flag;
 
   let result = creep.withdraw(target, type);
@@ -158,8 +158,11 @@ function withdraw(creep, target, task, type = RESOURCE_ENERGY) {
         creep.memory.target = null;
         creep.memory.task = null;
       } else if (
-        (target.store && target.store[type] === 0) ||
-        target[type] === 0
+        !initialTargetOnly &&
+        (
+          (target.store && target.store[type] === 0) ||
+          target[type] === 0
+        )
       ) { // reset if if current target is out of energy
         creep.memory.target = helpers.getTarget(creep, 'energyStore');
         if (!creep.memory.target) {

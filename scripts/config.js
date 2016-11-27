@@ -34,6 +34,11 @@ module.exports = {
         min: 8,
         priority: 1
       },
+      miner: {
+        class: 'miner',
+        min: 0,
+        priority: 10
+      },
       pioneer: {
         class: 'pioneer',
         min: 0,

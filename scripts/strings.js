@@ -183,6 +183,7 @@ let titles = {
   guard: 'Protector',
   harvester: 'Reaper',
   longHauler: 'Waggoner',
+  miner: 'Prospector',
   pioneer: 'Conquistador',
   scout: 'Vanguard',
   staticHarvester: 'Stockpiler',

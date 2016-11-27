@@ -493,6 +493,18 @@ function harvest(creep) {
   return flag;
 }
 
+function mine(creep) {
+  let flag;
+
+  if (!creep.memory.extractionSite) {
+
+  } else {
+
+  }
+
+  return flag;
+}
+
 function motivate(creep) {
   creep.say(strings.motivations[helpers.getRandomInt(0, strings.motivations.length - 1)], true);
 
@@ -1209,6 +1221,7 @@ module.exports = {
   getWorkEnergy: getWorkEnergy,
   guard: guard,
   harvest: harvest,
+  mine: mine,
   motivate: motivate,
   parking: parking,
   patrol: patrol,
