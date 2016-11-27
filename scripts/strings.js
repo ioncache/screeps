@@ -178,6 +178,7 @@ let names = [
 let titles = {
   banker: 'Hoarder',
   builder: 'Architect',
+  carter: 'Stevedore',
   courier: 'Dispatcher',
   fixer: 'Mender',
   guard: 'Protector',

@@ -7,6 +7,7 @@ let log = require('logger');
 let classes = {
   banker: require('class.creep.banker'),
   builder: require('class.creep.builder'),
+  carter: require('class.creep.carter'),
   courier: require('class.creep.courier'),
   fixer: require('class.creep.fixer'),
   guard: require('class.creep.guard'),
@@ -201,8 +202,8 @@ class RoomManager {
             }
           );
 
-          furthestDamagedStructures.sort((a, b) =>{
-            tower.pos.getRangeTo(b) - tower.pos.getRangeTo(a);
+          furthestDamagedStructures.sort((a, b) => {
+            return tower.pos.getRangeTo(b) - tower.pos.getRangeTo(a);
           });
 
           if (furthestDamagedStructures) {
@@ -289,7 +290,9 @@ class RoomManager {
       this.creepConfig.miner.min = extractionSites.length;
 
       // make 1 carter for each miner
-      this.creepConfig.carter.min = this.creepConfig.miner.currentCount;
+      if (this.creepConfig.carter) {
+        this.creepConfig.carter.min = this.creepConfig.miner.currentCount;
+      }
     }
 
     if (this.creepConfig.guard) {

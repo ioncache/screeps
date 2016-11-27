@@ -515,8 +515,10 @@ function mine(creep) {
 
     if (!extractionSite) {
       log.info('mine: no valid extraction site available');
-      creep.memory.task = null;
       creep.memory.container = null;
+      creep.memory.extractionSite = null;
+      creep.memory.mineral = null;
+      creep.memory.task = null;
       flag = false;
     } else {
       creep.memory.task = 'mine';
@@ -528,9 +530,10 @@ function mine(creep) {
 
     if (!extractionSite) {
       log.info('mine: selected site no longer exists');
-      creep.memory.task = null;
-      creep.memory.extractionSite = null;
       creep.memory.container = null;
+      creep.memory.extractionSite = null;
+      creep.memory.mineral = null;
+      creep.memory.task = null;
       flag = false;
     } else {
       let container = Game.getObjectById(creep.memory.container);
@@ -547,9 +550,10 @@ function mine(creep) {
 
       if (!container) {
         log.info('mine: no valid containers near extraction site');
-        creep.memory.task = null;
-        creep.memory.extractionSite = null;
         creep.memory.container = null;
+        creep.memory.extractionSite = null;
+        creep.memory.mineral = null;
+        creep.memory.task = null;
         flag = false;
       } else {
         creep.memory.container = container.id;
@@ -558,13 +562,22 @@ function mine(creep) {
       if (!creep.pos.isNearTo(extractionSite)) {
         flag = actions.moveTo(creep, extractionSite, 'mine');
       } else {
-        flag = actions.harvest(creep, extractionSite, 'mine');
-        let resourceTypes = Object.keys(creep.carry)
-        .filter((i) => {
-          return i !== RESOURCE_ENERGY;
-        });
-        if (resourceTypes) {
-          flag = actions.transfer(creep, container, 'mine', resourceTypes[0]);
+        let mineral = Game.getObjectById(creep.memory.mineral);
+        if (!mineral) {
+          mineral = creep.pos.findClosestByRange(FIND_MINERALS);
+        }
+        if (mineral) {
+          creep.memory.mineral = mineral.id;
+          flag = actions.harvest(creep, mineral, 'mine');
+          let resourceTypes = Object.keys(creep.carry)
+          .filter((i) => {
+            return i !== RESOURCE_ENERGY;
+          });
+          if (resourceTypes) {
+            flag = actions.transfer(creep, container, 'mine', resourceTypes[0]);
+          }
+        } else {
+          flag = false;
         }
       }
     }
@@ -1316,6 +1329,7 @@ module.exports = {
   transferStorage: transferStorage,
   transferUpgrade: transferUpgrade,
   withdraw: withdraw,
+  withdrawResources: withdrawResources,
   withdrawUpgrade: withdrawUpgrade,
   upgrade: upgrade
 };
