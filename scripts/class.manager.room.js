@@ -341,8 +341,10 @@ class RoomManager {
         recycleAmount -= currentlyRecycling.length;
 
         for (let i = 0; i < recycleAmount; i++) {
-          log.log('recycling harvester', notRecycling[i].name);
-          notRecycling[i].memory.task = 'recycle';
+          if (notRecycling[i]) {
+            log.log('recycling harvester', notRecycling[i].name);
+            notRecycling[i].memory.task = 'recycle';
+          }
         }
       }
 

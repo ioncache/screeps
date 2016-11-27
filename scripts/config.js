@@ -70,7 +70,7 @@ module.exports = {
       },
       harvester: {
         class: 'harvester',
-        defaultMin: 0;
+        defaultMin: 0,
         min: 0,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         priority: 3
