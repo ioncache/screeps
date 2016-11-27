@@ -68,6 +68,13 @@ module.exports = {
         parts: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
         priority: 2
       },
+      harvester: {
+        class: 'harvester',
+        defaultMin: 0;
+        min: 0,
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
+        priority: 3
+      },
       longHauler: {
         class: 'longHauler',
         min: 0,

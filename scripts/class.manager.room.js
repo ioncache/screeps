@@ -52,7 +52,10 @@ class RoomManager {
       });
       for (let creep of creeps) {
         if (!this.creepList[creep.name]) {
-          let creepClass = classes[this.creepConfig[creep.memory.role].class];
+          let creepClass = classes[
+            this.creepConfig[creep.memory.role].class ||
+            creep.memory.role
+          ];
           let newCreep = new creepClass(creep.memory.role);
           newCreep.name = creep.name;
           this.creepList[creep.name] = newCreep;
@@ -311,8 +314,9 @@ class RoomManager {
       if (this.creepConfig.harvester) {
         this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
         // always keep 1 harvester around
-        this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
-
+        if (this.creepConfig.harvester.defaultMin !== 0) {
+          this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
+        }
       }
 
       // recycle old harvesters once staic harvesters come online
