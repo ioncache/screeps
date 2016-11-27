@@ -841,11 +841,14 @@ function staticHarvest(creep) {
 }
 
 function transferMasterStorage(creep) {
-  let target = helpers.getTarget(creep, 'storage', {
-    filter: (s) => {
-      return s.id === Game.spawns[config.masterSpawn].room.storage.id;
-    }
-  });
+  let target;
+  if (
+    Game.spawns[config.masterSpawn] &&
+    Game.spawns[config.masterSpawn].room.storage
+  ) {
+    target = Game.spawns[config.masterSpawn].room.storage.id;
+  }
+
   if (target) {
     return transfer(creep, target);
   }
