@@ -287,6 +287,9 @@ class RoomManager {
       });
 
       this.creepConfig.miner.min = extractionSites.length;
+
+      // make 1 carter for each miner
+      this.creepConfig.carter.min = this.creepConfig.miner.currentCount;
     }
 
     if (this.creepConfig.guard) {

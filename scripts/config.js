@@ -13,6 +13,11 @@ module.exports = {
         min: 3,
         priority: 3
       },
+      carter: {
+        class: 'carter',
+        min: 0,
+        priority: 11
+      },
       courier: {
         class: 'courier',
         min: 0,

@@ -987,7 +987,6 @@ function transfer(creep, transferTarget) {
       let tempTarget = Game.getObjectById(target);
 
       // if the current target is now full, we can look for a new target
-      // this will ignore storages as they don't have an energyCapcity property
       if (
         (
           tempTarget.energyCapactity &&
@@ -1079,69 +1078,8 @@ function transferResources(creep) {
       }
     }
   } else {
-    let controllerLink = helpers.getTarget(creep, 'controllerLink');
-    let resourceContainer;
-
-    if (creep.memory.target) {
-      resourceContainer = Game.getObjectById('creep.memory.target');
-    }
-
-    if (!resourceContainer) {
-      creep.memory.target = null;
-
-      let resourceContainers = Game.rooms[creep.memory.homeRoom].find(FIND_STRUCTURES, {
-        filter: (structure) => {
-          return (
-            [
-              STRUCTURE_CONTAINER
-            ].includes(structure.structureType) &&
-            (
-              structure.id !== controllerLink &&
-              Object.keys(structure.store).length > 1
-            )
-          );
-        }
-      });
-
-      if (resourceContainers.length > 0) {
-        resourceContainers.sort((a, b) => {
-          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-        });
-        resourceContainer = resourceContainers[0];
-      }
-    }
-
-    if (resourceContainer) {
-      if (creep.memory.task !== 'transferResources') {
-        creep.memory.task = 'transferResources';
-      }
-      creep.memory.target = resourceContainer.id;
-
-      if (!creep.pos.isNearTo(resourceContainer)) {
-        flag = actions.moveTo(creep, resourceContainer, 'transferResources');
-      } else {
-        for (let type in resourceContainer.store) {
-          if (type === 'energy') {
-            continue;
-          }
-
-          flag = actions.withdraw(creep, resourceContainer, 'transferResource', type);
-          // if (flag) {
-          //   break;
-          // }
-        }
-
-        if (_.sum(creep.carry) >= creep.carryCapacity) {
-          creep.memory.target = null;
-          creep.memory.task = null;
-          flag = true;
-        }
-      }
-    } else {
-      creep.memory.target = null;
-      creep.memory.task = null;
-      flag = false;
-    }
+    creep.memory.task = null;
+    flag = false;
   }
 
   return flag;
@@ -1223,6 +1161,80 @@ function withdrawUpgrade(creep) {
   }
 
   return false;
+}
+
+function withdrawResources(creep) {
+  let flag;
+
+  if (_.sum(creep.carry) >= creep.carryCapacity) {
+    creep.memory.target = null;
+    creep.memory.task = null;
+    flag = false;
+  } else {
+    let resourceContainer = Game.getObjectById(creep.memory.target);
+
+    if (
+      resourceContainer &&
+      Object.keys(resourceContainer.store.length) <= 1
+    ) {
+      resourceContainer = null;
+    }
+
+    if (!resourceContainer) {
+      let controllerLink = helpers.getTarget(creep, 'controllerLink');
+      let resourceContainers = Game.rooms[creep.memory.homeRoom].find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+            [
+              STRUCTURE_CONTAINER
+            ].includes(structure.structureType) &&
+            (
+              structure.id !== controllerLink &&
+              Object.keys(structure.store).length > 1
+            )
+          );
+        }
+      });
+
+      if (resourceContainers.length > 0) {
+        resourceContainers.sort((a, b) => {
+          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+        });
+        resourceContainer = resourceContainers[0];
+      }
+    }
+
+    if (resourceContainer) {
+      if (creep.memory.task !== 'transferResources') {
+        creep.memory.task = 'transferResources';
+      }
+      creep.memory.target = resourceContainer.id;
+
+      if (!creep.pos.isNearTo(resourceContainer)) {
+        flag = actions.moveTo(creep, resourceContainer, 'transferResources');
+      } else {
+        for (let type in resourceContainer.store) {
+          if (type === 'energy') {
+            continue;
+          }
+
+          flag = actions.withdraw(creep, resourceContainer, 'transferResource', type);
+        }
+
+        if (_.sum(creep.carry) >= creep.carryCapacity) {
+          creep.memory.target = null;
+          creep.memory.task = null;
+          flag = true;
+        }
+      }
+    } else {
+      creep.memory.target = null;
+      creep.memory.task = null;
+      flag = false;
+    }
+  }
+
+  return flag;
 }
 
 function withdraw(creep, withdrawTarget) {
