@@ -4,7 +4,7 @@ let CreepBase = require('class.creep.base');
 let log = require('logger');
 
 class CreepStaticUpgrader extends CreepBase {
-  constructor(role = 'upgrader', parts = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]) {
+  constructor(role = 'staticUpgrader', parts = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
       'renew',

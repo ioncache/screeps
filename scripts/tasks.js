@@ -840,6 +840,19 @@ function staticHarvest(creep) {
   return flag;
 }
 
+function transferMasterStorage(creep) {
+  let target = helpers.getTarget(creep, 'storage', {
+    filter: (s) => {
+      return s.id === Game.spawns[config.masterSpawn].room.storage.id;
+    }
+  });
+  if (target) {
+    return transfer(creep, target);
+  }
+
+  return false;
+}
+
 function transferStorage(creep) {
   let target = helpers.getTarget(creep, 'storage');
   if (target) {
@@ -1198,6 +1211,7 @@ module.exports = {
   renew: renew,
   staticHarvest: staticHarvest,
   transfer: transfer,
+  transferMasterStorage: transferMasterStorage,
   transferResources: transferResources,
   transferStorage: transferStorage,
   transferUpgrade: transferUpgrade,

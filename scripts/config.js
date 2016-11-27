@@ -120,7 +120,7 @@ module.exports = {
     }
   },
   masterSpawn: 'Spawn1',
-  masterOWner: 'ioncache',
+  masterOwner: 'ioncache',
   maxHits: {
     constructedWall: 5000,
     rampart: 10000

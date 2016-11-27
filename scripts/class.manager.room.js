@@ -11,6 +11,7 @@ let classes = {
   fixer: require('class.creep.fixer'),
   guard: require('class.creep.guard'),
   harvester: require('class.creep.harvester'),
+  longHauler: require('class.creep.longHauler'),
   pioneer: require('class.creep.pioneer'),
   supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),

@@ -343,11 +343,7 @@ function getTarget(creep, type, opts = {}) {
       break;
 
     case 'spawn':
-      let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS, {
-        filter: (i) => {
-          return i.room.name === creep.memory.homeRoom;
-        }
-      });
+      let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
 
       if (spawn) {
         target = spawn.id;
@@ -355,29 +351,6 @@ function getTarget(creep, type, opts = {}) {
 
       if (!target) {
         target = Game.spawns[config.masterSpawn].id;
-      }
-
-      break;
-
-    case 'storage':
-      let storage;
-      if (opts.filter) {
-        let storages = Game.rooms[creep.memory.homeRoom].find(
-          FIND_STRUCTURES,
-          {
-            filter: opts.filter
-          }
-        );
-        if (storages.length) {
-          storage = storages[0];
-        }
-      } else {
-        // TODO: check if is full (unlikely anytime soon with 1M capacity)
-        storage = Game.rooms[creep.memory.homeRoom].storage;
-      }
-
-      if (storage) {
-        target = storage.id;
       }
 
       break;
@@ -408,6 +381,31 @@ function getTarget(creep, type, opts = {}) {
       }
 
       break;
+
+    case 'storage':
+      let storage;
+      if (opts.filter) {
+        let storages = Game.rooms[creep.memory.homeRoom].find(
+          FIND_STRUCTURES,
+          {
+            filter: opts.filter
+          }
+        );
+        if (storages.length) {
+          storage = storages[0];
+        }
+      } else {
+        // TODO: check if is full (unlikely anytime soon with 1M capacity)
+        storage = Game.rooms[creep.memory.homeRoom].storage;
+      }
+
+      if (storage) {
+        target = storage.id;
+      }
+
+      break;
+
+
     default:
   }
 

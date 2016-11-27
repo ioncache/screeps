@@ -4,7 +4,7 @@ let CreepBase = require('class.creep.base');
 let log = require('logger');
 
 class CreepBanker extends CreepBase {
-  constructor(role = 'staticHarvester', parts = [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]) {
+  constructor(role = 'banker', parts = [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]) {
     super(role, parts);
     this.tasks = [
       'renew',
