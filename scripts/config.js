@@ -125,7 +125,7 @@ module.exports = {
     constructedWall: function(room) {
       return room.controller.level * 2500;
     },
-    rampart: function(creep) {
+    rampart: function(room) {
       return room.controller.level * 2500;
     }
   }
