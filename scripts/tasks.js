@@ -221,7 +221,11 @@ function claim(creep) {
   return flag;
 }
 
-function fillup(creep) {
+function fillupMasterStorage(creep) {
+  return fillup(creep, true);
+}
+
+function fillup(creep, waitUntilFull = false) {
   let flag;
 
   if (creep.carry.energy === creep.carry.carryCapacity) {
@@ -258,7 +262,9 @@ function fillup(creep) {
     if (!container) {
       log.info('fillup: no valid containers found');
       creep.memory.container = null;
-      creep.memory.task = null;
+      if (!waitUntilFull) {
+        creep.memory.task = null;
+      }
       flag = false;
     } else {
       creep.memory.target = container;
@@ -1201,6 +1207,7 @@ module.exports = {
   build: build,
   claim: claim,
   fillup: fillup,
+  fillupMasterStorage: fillupMasterStorage,
   fix: fix,
   getWorkEnergy: getWorkEnergy,
   guard: guard,

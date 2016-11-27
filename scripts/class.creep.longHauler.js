@@ -9,7 +9,7 @@ class CreepLongHauler extends CreepBase {
     this.tasks = [
       'renew',
       'transferMasterStorage',
-      'fillup'
+      'fillupMasterStorage'
     ];
   }
 
