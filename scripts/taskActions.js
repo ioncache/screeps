@@ -17,14 +17,24 @@ function harvest(creep, target, task) {
       creep.memory.target = null;
       flag = false;
       break;
+
+    case ERR_NO_BODYPART:
+      log.info(`${task}: don't be silly, this creep has no WORK body parts for harvesting`);
+      creep.memory.target = null;
+      creep.memory.task = null;
+      flag = false;
+      break;
+
     case ERR_NOT_ENOUGH_RESOURCES:
       log.info(`${task}: harvest source out of resources`);
       flag = false;
       break;
+
     case ERR_NOT_IN_RANGE:
       log.info(`${task}: target not in range`);
       flag = moveTo(creep, target, task);
       break;
+
     case OK:
       log.info(`${task}: harvesting`);
       // store the current source so that we can move away from it once
@@ -33,6 +43,7 @@ function harvest(creep, target, task) {
       creep.memory.nearSource = target.id;
       flag = true;
       break;
+
     default:
       log.info(`${task}: unknown response during harvest'${result}'`);
       flag = true;

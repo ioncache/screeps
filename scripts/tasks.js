@@ -25,10 +25,6 @@ let helpers = require('helpers');
 let log = require('logger');
 let strings = require('strings');
 
-function seriousBuild(creep) {
-  let flag = build;
-}
-
 function build(creep) {
   let flag = true;
 
@@ -500,6 +496,17 @@ function motivate(creep) {
   return false;
 }
 
+// mainly used when another move is desired directly after a previous move
+function moveTo(creep) {
+  let flag = actions.moveTo(creep, creep.memory.target, 'moveTo');
+  if (flag) {
+    creep.memory.target = null;
+    creep.memory.task = null;
+  }
+
+  return flag;
+}
+
 function parking(creep) {
   let flag;
 
@@ -688,6 +695,9 @@ function renew(creep, nextTask) {
             // transfer any held energy so we can renew
             if (creep.carry.energy > 0) {
               let result = creep.transfer(spawn, RESOURCE_ENERGY);
+            } else {
+              creep.memory.task = 'harvest'; // go harvest for energy to renew with
+              creep.memory.target = helpers.getTarget(creep, 'source');
             }
             flag = true;
           }
@@ -831,10 +841,39 @@ function staticHarvest(creep) {
 }
 
 function transferStorage(creep) {
-  return transfer(creep, true);
+  let target = helpers.getTarget(creep, 'storage');
+  if (target) {
+    return transfer(creep, target);
+  }
+
+  return false;
 }
 
-function transfer(creep, storageTarget) {
+function transferUpgrade(creep) {
+  let target;
+
+  // first try finding a container near the controller to transfer to
+  target = helpers.get(creep, 'controllerContainer');
+  if (target) {
+    return transfer(creep, target);
+  }
+
+  // then try finding a link near the controller to transfer to
+  target = helpers.get(creep, 'controllerLink');
+  if (target) {
+    return transfer(creep, target);
+  }
+
+  // finally try finding a storage near the controller to transfer to
+  target = helpers.get(creep, 'controllerStorage');
+  if (target) {
+    return transfer(creep, target);
+  }
+
+  return false;
+}
+
+function transfer(creep, transferTarget) {
   let flag = true;
 
   if (creep.carry.energy === 0) {
@@ -864,8 +903,8 @@ function transfer(creep, storageTarget) {
       }
     }
 
-    if (!target && storageTarget) {
-      target = helpers.getTarget(creep, 'storage');
+    if (!target && transferTarget) {
+      target = transferTarget;
     }
 
     if (!target) {
@@ -1063,7 +1102,31 @@ function upgrade(creep) {
   return flag;
 }
 
-function withdraw(creep) {
+function withdrawUpgrade(creep) {
+  let target;
+
+  // first try finding a container near the controller to withdraw from
+  target = helpers.get(creep, 'controllerContainer');
+  if (target) {
+    return withdraw(creep, target);
+  }
+
+  // then try finding a link near the controller to withdraw from
+  target = helpers.get(creep, 'controllerLink');
+  if (target) {
+    return withdraw(creep, target);
+  }
+
+  // finally try finding a storage near the controller to withdraw from
+  target = helpers.get(creep, 'controllerStorage');
+  if (target) {
+    return withdraw(creep, target);
+  }
+
+  return false;
+}
+
+function withdraw(creep, withdrawTarget) {
   let flag = true;
 
   if (_.sum(creep.carry) >= creep.carryCapacity) {
@@ -1087,11 +1150,15 @@ function withdraw(creep) {
     }
 
     if (!target) {
-      target = helpers.getTarget(creep, 'energyStore');
-    }
+      if (withdrawTarget) {
+        target = withdrawTarget;
+      } else {
+        target = helpers.getTarget(creep, 'energyStore');
 
-    if (!target) {
-      target = helpers.getTarget(creep, 'storage');
+        if (!target) {
+        target = helpers.getTarget(creep, 'storage');
+        }
+      }
     }
 
     // if there is no target at this point, no valid target was found
@@ -1104,7 +1171,6 @@ function withdraw(creep) {
         creep.memory.task = 'withdraw';
         creep.say('taking');
       }
-
 
       target = Game.getObjectById(target);
 
@@ -1134,6 +1200,8 @@ module.exports = {
   transfer: transfer,
   transferResources: transferResources,
   transferStorage: transferStorage,
+  transferUpgrade: transferUpgrade,
   withdraw: withdraw,
+  withdrawUpgrade: withdrawUpgrade,
   upgrade: upgrade
 };

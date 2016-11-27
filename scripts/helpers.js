@@ -57,20 +57,55 @@ function getTarget(creep, type, opts = {}) {
       }
       break;
 
+    case 'controllerContainer':
+      target = getTarget(creep, 'controllerStructure', {
+        distance: 3,
+        types: [STRUCTURE_CONTAINER]
+      });
+      break;
+
     case 'controllerLink':
-      let controllerLink = Game.rooms[creep.memory.homeRoom].controller.pos.findClosestByRange(
+      target = getTarget(creep, 'controllerStructure', {
+        distance: 3,
+        types: [STRUCTURE_LINK]
+      });
+      break;
+
+    case 'controllerStorage':
+      target = getTarget(creep, 'controllerStructure', {
+        distance: 3,
+        types: [STRUCTURE_STORAGE]
+      });
+
+    case 'controllerStructure':
+      let maxDistanceFromController = opts.distance || 3;
+      let controllerStructure = Game.rooms[creep.memory.homeRoom].controller.pos.findClosestByRange(
         FIND_STRUCTURES, {
           filter: (s) => {
-            return (
-              s.structureType === STRUCTURE_LINK &&
-              Game.rooms[creep.memory.homeRoom].controller.pos.getRangeTo(s) <= 3
-            );
+            if (opts.types) {
+              return (
+                opts.types.includes(s.structureType) &&
+                Game.rooms[creep.memory.homeRoom].controller.pos.getRangeTo(s) <= maxDistanceFromController &&
+                (
+                  (s.energy && s.energy > 0) ||
+                  (s.store && s.store[RESOURCE_ENERGY] > 0)
+                )
+              );
+            } else {
+              return (
+                Game.rooms[creep.memory.homeRoom].controller.pos.getRangeTo(s) <= maxDistanceFromController &&
+                (
+                  (s.energy && s.energy > 0) ||
+                  (s.store && s.store[RESOURCE_ENERGY] > 0)
+                )
+              );
+            }
           }
         }
       );
 
-      if (controllerLink) {
-        target = controllerLink.id;
+      if (controllerStructure) {
+        target = controllerStructure.id;
       }
       break;
 

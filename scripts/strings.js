@@ -87,6 +87,7 @@ let names = [
   "ChowTow",
   "CricketPearl",
   "DaisyBoo",
+  "DangardAce",
   "Darriah",
   "Destry",
   "Diezelky",
@@ -111,6 +112,7 @@ let names = [
   "JoelleRollo",
   "JustinCase",
   "KalEl",
+  "Kaneda",
   "Katniss",
   "Kix",
   "Levaeh",
@@ -137,6 +139,7 @@ let names = [
   "RiverRose",
   "Rollergirl",
   "RoyalReign",
+  "RoyMustang",
   "SaintLazslo",
   "Sansa",
   "SatchelFarrow",
@@ -152,6 +155,7 @@ let names = [
   "SummerRain",
   "SundayRose",
   "TalulaDoesTheHulaFromHawaii",
+  "Tetsuo",
   "Thinn",
   "TitanJewell",
   "ToastedTeacake",
@@ -162,6 +166,7 @@ let names = [
   "UriahHeep",
   "VerucaSalt",
   "Vodka",
+  "WhiskeyDanger",
   "WillPower",
   "WyattIsabelle",
   "Xzayvian",
@@ -180,6 +185,7 @@ let titles = {
   pioneer: 'Conquistador',
   scout: 'Vanguard',
   staticHarvester: 'Stockpiler',
+  supplier: 'Provisioner',
   upgrader: 'Enhancer'
 };
 

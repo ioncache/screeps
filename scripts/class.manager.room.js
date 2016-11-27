@@ -12,6 +12,7 @@ let classes = {
   guard: require('class.creep.guard'),
   harvester: require('class.creep.harvester'),
   pioneer: require('class.creep.pioneer'),
+  supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),
   upgrader: require('class.creep.upgrader')
 };
@@ -68,7 +69,7 @@ class RoomManager {
       // - number of guards
       // - number of static harvesters
       //   number of couriers
-      //   number of bankers
+      //   number of bankers/suppliers
       // - types of builders
       // - number of fixers based on towers
       this.managePopulation();
@@ -84,7 +85,10 @@ class RoomManager {
 
       // be nice and print out the current population after all spawning
       // and management has occurred
-      this.displayPopulation()
+      this.displayPopulation();
+
+      // recycle creeps who are superfluous to the population
+      this.recycleCreeps();
 
       // activate creeps
       this.activateCreeps();
@@ -281,8 +285,9 @@ class RoomManager {
         this.creepConfig.fixer.currentCount >= Math.ceil(this.creepConfig.fixer.min / 2) &&
         this.creepConfig.builder.currentCount >= Math.ceil(this.creepConfig.builder.min / 2) &&
         (
-          this.creepConfig.harvester.currentCount >= Math.ceil(this.creepConfig.harvester.min / 2) ||
-          this.creepConfig.staticHarvester.currentCount > 0
+          this.creepConfig.staticHarvester &&
+          (this.creepConfig.harvester.currentCount >= Math.ceil(this.creepConfig.harvester.min / 2) ||
+          this.creepConfig.staticHarvester.currentCount > 0)
         ) &&
         this.creepConfig.upgrader.currentCount >= Math.ceil(this.creepConfig.upgrader.min / 2)
       ) {
@@ -303,12 +308,16 @@ class RoomManager {
     if (this.creepConfig.staticHarvester) {
       // manage regular harvester population based on # of static harvesters
       this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
-      this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
-      // always keep 1 harvester around
-      this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
+      if (this.creepConfig.harvester) {
+        this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
+        // always keep 1 harvester around
+        this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
+
+      }
 
       // recycle old harvesters once staic harvesters come online
       if (
+        this.creepConfig.harvester &&
         this.creepConfig.harvester.currentCount > this.creepConfig.harvester.min &&
         this.creepConfig.staticHarvester.currentCount > 0
       ) {
@@ -333,19 +342,46 @@ class RoomManager {
         }
       }
 
-      // manager courier and banker population based on current static harvesters
-      if (this.creepConfig.staticHarvester.currentCount > 0) {
-        if (this.room.storage) {
+      // manager courier and banker/supplier population based on current static harvesters
+      if (
+        this.creepConfig.courier &&
+        this.creepConfig.staticHarvester.currentCount > 0
+      ) {
+        let bankerOrSupplier = false;
+
+        if (
+          this.creepConfig.banker &&
+          this.room.storage
+        ) {
           this.creepConfig.banker.min = this.creepConfig.staticHarvester.currentCount;
-          this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 2;
-        } else {
-          this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 3;
+          bankerOrSupplier = true;
+        } else if (
+          this.creepConfig.supplier
+        ) {
+          this.creepConfig.supplier.min = this.creepConfig.staticHarvester.currentCount;
+          bankerOrSupplier = true;
+        }
+
+        if (this.creepConfig.courier.min === 0) {
+          if (bankerOrSupplier) {
+            this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 2;
+          } else {
+            this.creepConfig.courier.min = this.creepConfig.staticHarvester.currentCount * 3;
+          }
         }
       }
     }
   }
 
+  recycleCreeps() {
+    // TODO
+  }
+
+  // TODO: don't request new creeps from master spawn if this room is under attack
+  //       and this room isn't the master spawn room
+  //       also, possibly auto-spawn defenders when under attack
   spawnCreeps() {
+    // sort the rols by priority so we only attempt to spawn higher priorty ones
     let roles = Object.keys(this.creepConfig).sort((a, b) => {
       return this.creepConfig[a].priority - this.creepConfig[b].priority;
     });
@@ -356,7 +392,7 @@ class RoomManager {
       });
 
       if (creeps.length < this.creepConfig[role].min) {
-        let skipSpawn = false;
+        let skipSpawn = false;  // flag to break out of spawn loop
         let creepClass = classes[this.creepConfig[role].class];
         let newCreep = new creepClass(role);
         let parts = this.creepConfig[role].parts || newCreep.parts;

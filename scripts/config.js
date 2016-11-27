@@ -44,10 +44,45 @@ module.exports = {
         min: 0,
         priority: 1.5
       },
+      supplier: {
+        class: 'supplier',
+        min: 0,
+        priority: 1.875
+      },
       upgrader: {
         class: 'upgrader',
         min: 3,
         priority: 2
+      }
+    },
+    hydroRoom: {
+      builder: {
+        class: 'builder',
+        min: 1,
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
+        priority: 5
+      },
+      courier: {
+        class: 'courier',
+        min: 1,
+        parts: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
+        priority: 2
+      },
+      longHauler: {
+        class: 'longHauler',
+        min: 0,
+        priority: 4
+      },
+      staticHarvester: {
+        class: 'staticHarvester',
+        min: 0,
+        priority: 1
+      },
+      upgrader: {
+        class: 'upgrader',
+        min: 1,
+        parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
+        priority: 3
       }
     },
     basic: {
