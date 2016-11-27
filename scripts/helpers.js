@@ -238,7 +238,7 @@ function getTarget(creep, type, opts = {}) {
             if (maxHits[structure.structureType]) {
               return (
                 structure.room.name === creep.memory.homeRoom &&
-                structure.hits < maxHits[structure.structureType](creep)
+                structure.hits < maxHits[structure.structureType](creep.room)
               );
             } else {
               return (
