@@ -158,8 +158,8 @@ function withdraw(creep, target, task, type = RESOURCE_ENERGY) {
         creep.memory.target = null;
         creep.memory.task = null;
       } else if (
-        target[type] === 0 ||
-        (target.store && target.store[type] === 0)
+        (target.store && target.store[type] === 0) ||
+        target[type] === 0
       ) { // reset if if current target is out of energy
         creep.memory.target = helpers.getTarget(creep, 'energyStore');
         if (!creep.memory.target) {

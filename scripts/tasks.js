@@ -228,32 +228,27 @@ function fillupMasterStorage(creep) {
 function fillup(creep, waitUntilFull = false) {
   let flag;
 
-  if (creep.carry.energy === creep.carry.carryCapacity) {
+  if (creep.carry.energy === creep.carryCapacity) {
     creep.memory.container = null;
     creep.memory.task = null;
     flag = false;
   } else {
     let container = creep.memory.container;
     if (!container) {
-      let controllerLink = helpers.getTarget(creep, 'controllerLink');
       let containers = Game.rooms[creep.memory.homeRoom].find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
             structure.room.name === creep.memory.homeRoom &&
             structure.structureType === STRUCTURE_CONTAINER &&
-            structure.id !== controllerLink &&
             structure.store[RESOURCE_ENERGY] > 1
           );
         }
       });
 
       container = _.max(containers, (i) => {
-        if (i.store) {
-          return i.store[RESOURCE_ENERGY];
-        } else {
-          return i.energy;
-        }
+        return i.store[RESOURCE_ENERGY];
       });
+
       if (container) {
         container = container.id;
       }
@@ -264,14 +259,16 @@ function fillup(creep, waitUntilFull = false) {
       creep.memory.container = null;
       if (!waitUntilFull) {
         creep.memory.task = null;
+        flag = false;
+      } else {
+        flag = true;
       }
-      flag = false;
     } else {
       creep.memory.target = container;
 
       container = Game.getObjectById(creep.memory.target);
 
-      flag = actions.withdraw(creep, container, 'fillup');
+      flag = actions.withdraw(creep, container, 'fillup'. RESOURCE_ENERGY, waitUntilFull);
       creep.memory.container = null;
     }
   }
