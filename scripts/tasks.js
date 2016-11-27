@@ -268,7 +268,7 @@ function fillup(creep, waitUntilFull = false) {
 
       container = Game.getObjectById(creep.memory.target);
 
-      flag = actions.withdraw(creep, container, 'fillup'. RESOURCE_ENERGY, waitUntilFull);
+      flag = actions.withdraw(creep, container, 'fillup', RESOURCE_ENERGY, waitUntilFull);
       creep.memory.container = null;
     }
   }
