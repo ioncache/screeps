@@ -312,8 +312,10 @@ class RoomManager {
       // manage regular harvester population based on # of static harvesters
       this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
       if (this.creepConfig.harvester) {
-        this.creepConfig.harvester.min = this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length);
-        // always keep 1 harvester around
+        this.creepConfig.harvester.min =
+          _.max([this.creepConfig.harvester.defaultMin - (3 * staticHarvestLocations.length), 0]);
+
+        // usually keep 1 harvester around
         if (this.creepConfig.harvester.defaultMin !== 0) {
           this.creepConfig.harvester.min = this.creepConfig.harvester.min || 1;
         }
