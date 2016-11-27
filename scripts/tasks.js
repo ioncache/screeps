@@ -222,10 +222,10 @@ function claim(creep) {
 }
 
 function fillupMasterStorage(creep) {
-  return fillup(creep, true);
+  return fillup(creep, true, 'fillupMasterStorage');
 }
 
-function fillup(creep, waitUntilFull = false) {
+function fillup(creep, waitUntilFull = false, task) {
   let flag;
 
   if (creep.carry.energy === creep.carryCapacity) {
@@ -264,6 +264,7 @@ function fillup(creep, waitUntilFull = false) {
         flag = true;
       }
     } else {
+      creep.memory.task = task || 'fillup';
       creep.memory.target = container;
 
       container = Game.getObjectById(creep.memory.target);

@@ -155,6 +155,7 @@ function withdraw(creep, target, task, type = RESOURCE_ENERGY, initialTargetOnly
       log.info(`${task}: withdrawing`);
       // reset task now if creep is full after withdraw
       if (_.sum(creep.carry) >= creep.carryCapacity) {
+        log.info(`${task}: creep full, resetting task and target`);
         creep.memory.target = null;
         creep.memory.task = null;
       } else if (
