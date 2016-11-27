@@ -401,6 +401,12 @@ function getTarget(creep, type, opts = {}) {
 
       if (storage) {
         target = storage.id;
+      } else {
+        storage = Game.spawns[config.masterSpawn].room.storage;
+
+        if (storage) {
+          target = storage.id;
+        }
       }
 
       break;

@@ -27,10 +27,10 @@ class RoomManager {
 
     if (
       this.room.memory &&
-      this.room.memory.level &&
-      config.creepConfigMaster[this.room.memory.level]
+      this.room.memory.roomType &&
+      config.creepConfigMaster[this.room.memory.roomType]
     ) {
-      this.creepConfig = _.cloneDeep(config.creepConfigMaster[this.room.memory.level]);
+      this.creepConfig = _.cloneDeep(config.creepConfigMaster[this.room.memory.roomType]);
       this.active = true;
     }
   }

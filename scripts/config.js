@@ -77,7 +77,7 @@ module.exports = {
       },
       longHauler: {
         class: 'longHauler',
-        min: 0,
+        min: 1,
         priority: 4
       },
       staticHarvester: {
