@@ -93,7 +93,7 @@ function build(creep) {
           break;
         case OK:
           log.info(`build: constructing`);
-          // reset task now if creep is out of energy after fix
+          // reset task now if creep is out of energy after build
           if (creep.carry.energy === 0) {
             creep.memory.target = null;
             creep.memory.task = null;
