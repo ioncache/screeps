@@ -9,7 +9,8 @@ class CreepUpgrader extends CreepBase {
     this.tasks = [
       'renew',
       'upgrade',
-      'getWorkEnergy'
+      'withdrawUpgrade',
+      'harvest'
     ];
   }
 
