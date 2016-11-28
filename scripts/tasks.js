@@ -383,6 +383,7 @@ function getWorkEnergy(creep) {
 
   let energySource = helpers.getTarget(creep, 'energyStore');
 
+  // TODO: bleh fix this so it makes sense on a per room basis
   if (
     energySource &&
     (staticHarvesters.length >= sources.length ||

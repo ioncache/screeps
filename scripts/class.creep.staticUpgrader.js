@@ -16,7 +16,7 @@ class CreepStaticUpgrader extends CreepBase {
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `I could stand here all all day`);
+    log.start(creep.name, `I could stand here all day`);
 
     super.activate();
 
