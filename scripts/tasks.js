@@ -561,28 +561,31 @@ function mine(creep) {
 
       if (!creep.pos.isNearTo(extractionSite)) {
         flag = actions.moveTo(creep, extractionSite, 'mine');
-      } else if (extractionSite.cooldown == 0) {
+      } else if (extractionSite.cooldown === 0) {
         let mineral = Game.getObjectById(creep.memory.mineral);
         if (!mineral) {
           mineral = creep.pos.findClosestByRange(FIND_MINERALS);
         }
+
         if (mineral) {
           creep.memory.mineral = mineral.id;
           flag = actions.harvest(creep, mineral, 'mine');
-
-          let resourceTypes = Object.keys(creep.carry)
-          .filter((i) => {
-            return i !== RESOURCE_ENERGY;
-          });
-
-          if (resourceTypes) {
-            flag = actions.transfer(creep, container, 'mine', resourceTypes[0]);
-          }
         } else {
           flag = false;
         }
       } else {
         flag = false;
+      }
+
+      if (Object.keys(creep.carry).length > 1) {
+        let resourceTypes = Object.keys(creep.carry)
+        .filter((i) => {
+          return i !== RESOURCE_ENERGY;
+        });
+
+        if (resourceTypes) {
+          flag = actions.transfer(creep, container, 'mine', resourceTypes[0]);
+        }
       }
     }
   }
