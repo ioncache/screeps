@@ -972,19 +972,19 @@ function transferUpgrade(creep) {
   let target;
 
   // first try finding a container near the controller to transfer to
-  target = helpers.get(creep, 'controllerContainer');
+  target = helpers.getTarget(creep, 'controllerContainer');
   if (target) {
     return transfer(creep, target);
   }
 
   // then try finding a link near the controller to transfer to
-  target = helpers.get(creep, 'controllerLink');
+  target = helpers.getTarget(creep, 'controllerLink');
   if (target) {
     return transfer(creep, target);
   }
 
   // finally try finding a storage near the controller to transfer to
-  target = helpers.get(creep, 'controllerStorage');
+  target = helpers.getTarget(creep, 'controllerStorage');
   if (target) {
     return transfer(creep, target);
   }
@@ -1162,20 +1162,20 @@ function upgrade(creep) {
 function withdrawUpgrade(creep) {
   let target;
 
-  // first try finding a container near the controller to withdraw from
-  target = helpers.get(creep, 'controllerContainer');
+  // then try finding a link near the controller to withdraw from
+  target = helpers.getTarget(creep, 'controllerLink');
   if (target) {
     return withdraw(creep, target);
   }
 
-  // then try finding a link near the controller to withdraw from
-  target = helpers.get(creep, 'controllerLink');
+  // first try finding a container near the controller to withdraw from
+  target = helpers.getTarget(creep, 'controllerContainer');
   if (target) {
     return withdraw(creep, target);
   }
 
   // finally try finding a storage near the controller to withdraw from
-  target = helpers.get(creep, 'controllerStorage');
+  target = helpers.getTarget(creep, 'controllerStorage');
   if (target) {
     return withdraw(creep, target);
   }
