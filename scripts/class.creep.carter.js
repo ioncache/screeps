@@ -16,11 +16,11 @@ class CreepCarter extends CreepBase {
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `guaranteed* delivery tomorrow before noon`);
+    log.start(creep.name, `lugging minerals... golly why me?`);
 
     super.activate();
 
-    log.finish(`*guarantee not a real guarantee`);
+    log.finish(`wonder what I could get on the open market for these`);
   }
 }
 
