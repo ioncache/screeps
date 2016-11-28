@@ -10,7 +10,7 @@ class CreepUpgrader extends CreepBase {
       'renew',
       'upgrade',
       'withdrawUpgrade',
-      'harvest'
+      'getWorkEnergy'
     ];
   }
 
