@@ -570,7 +570,11 @@ function mine(creep) {
 
         if (mineral) {
           creep.memory.mineral = mineral.id;
-          flag = actions.harvest(creep, mineral, 'mine');
+          if (mineral.ticksToRegeneration) {
+            flag = false;
+          } else {
+            flag = actions.harvest(creep, mineral, 'mine');
+          }
         } else {
           flag = false;
         }
