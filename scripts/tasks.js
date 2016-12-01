@@ -6,17 +6,11 @@ Methods will return true if the creep should perform no other tasks this tick
 Methods will return false if either the creep should not do this task or if
 the task allows for other actions to be taken afterwards
 
-TODO: this should be changed to return something more along the lines of:
-
-{
-  didAction: boolean,
-  didAnimation: boolean
-}
-
-some of the tasks could end up doing 1 or both of the types of creep actions
-
-INFO:
-
+TODO: this should be optimized instead ot handle the correct action
+      dependencies found from the creep action pipeline
+      http://support.screeps.com/hc/en-us/articles/203137792-Simultaneous-execution-of-creep-actions
+      using that set of task dependencies the creeps could be be far more
+      efficient in doing multiple tasks a turn
 */
 
 let actions = require('taskActions');
