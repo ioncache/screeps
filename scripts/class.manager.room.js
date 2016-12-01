@@ -176,9 +176,35 @@ class RoomManager {
     });
 
     for (let tower of towers) {
-      let closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-      if (closestHostile) {
-        tower.attack(closestHostile);
+      let hostileCreeps = tower.room.find(FIND_HOSTILE_CREEPS);
+
+      if (hostileCreeps.length > 0) {
+        let hostileTarget = null;
+
+        let hostileHealers = hostileCreeps.filter((c) => {
+          return c.body.filter((p) => {
+            return p.type === HEAL;
+          }).length > 0;
+        });
+
+        // prioritize healers as they are a pain in the neck
+        if (hostileHealers.length > 0) {
+          hostileHealers.sort((a, b) => {
+            return tower.pos.getRangeTo(a) - tower.pos.getRangeTo(b);
+          });
+
+          hostileTarget = hostileHealers[0];
+        } else {
+          hostileCreeps.sort((a, b) => {
+            return tower.pos.getRangeTo(a) - tower.pos.getRangeTo(b);
+          });
+
+          hostileTarget = hostileCreeps[0];
+        }
+
+        if (hostileTarget) {
+          tower.attack(hostileTarget);
+        }
       } else {
         let woundedCreep =  tower.pos.findClosestByRange(FIND_MY_CREEPS, {
             filter: (creep) => {
