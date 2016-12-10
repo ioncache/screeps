@@ -180,6 +180,7 @@ let titles = {
   builder: 'Architect',
   carter: 'Stevedore',
   courier: 'Dispatcher',
+  energizer: 'Energizer',
   fixer: 'Mender',
   guard: 'Protector',
   harvester: 'Reaper',

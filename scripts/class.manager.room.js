@@ -76,6 +76,7 @@ class RoomManager {
       // - number of static harvesters
       //   number of couriers
       //   number of bankers/suppliers
+      // - number of energizers
       // - types of builders
       // - number of fixers based on towers
       this.managePopulation();
@@ -423,6 +424,16 @@ class RoomManager {
           }
         }
       }
+    }
+
+    // 1 energizer per tower
+    if (this.creepConfig.energizer) {
+      let towers = this.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return structure.structureType === STRUCTURE_TOWER;
+        }
+      });
+      this.creepConfig.energizer.min = towers.length;
     }
   }
 

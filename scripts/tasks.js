@@ -967,6 +967,30 @@ function transferStorage(creep) {
   return false;
 }
 
+function transferTower(creep) {
+  let towers = helpers. Game.rooms[creep.memory.homeRoom].find(
+    FIND_STRUCTURES,
+    {
+      filter: (s) => {
+        return (
+          s.room.name === creep.memory.homeRoom &&
+          s.structureType === STRUCTURE_TOWER &&
+          s.energy < s.energyCapacity
+        );
+      }
+    }
+  );
+
+  if (towers.length > 0) {
+    towers.sort((a, b) => {
+      return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+    });
+    return transfer(creep, towers[0].id);
+  }
+
+  return false;
+}
+
 function transferUpgrade(creep) {
   let target;
 

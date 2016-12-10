@@ -23,6 +23,11 @@ module.exports = {
         min: 0,
         priority: 1.75
       },
+      courier: {
+        class: 'energizer',
+        min: 0,
+        priority: 4
+      },
       fixer: {
         class: 'fixer',
         min: 2,
