@@ -1160,7 +1160,11 @@ function staticHarvest(creep) {
 function steal(creep) {
   let flag;
 
-  if (_.sum(creep.carry) >= creep.carryCapacity) {
+  // just recycle the creep if it's getting close to death
+  if (creep.ticksToLive <= 125) {
+    creep.memory.task = 'recycle';
+    flag = true;
+  } else if (_.sum(creep.carry) >= creep.carryCapacity) {
     flag = false;
   } else {
     let thieveryTarget =  Game.flags[creep.memory.thieveryTarget];
