@@ -626,15 +626,16 @@ function harvest(creep) {
 function hunt(creep) {
   let flag;
 
-  let keeperTarget = Game.flags[creep.memory.keeperTarget];
-
   if (creep.hits < creep.hitsMax) {
     creep.heal(creep);
   }
 
+  let keeperTarget = Game.flags[creep.memory.keeperTarget];
+
   if (
     keeperTarget &&
-    creep.pos.getRangeTo(keeperTarget) === 0
+    keeperTarget.room &&
+    keeperTarget.room.name === creep.room.name
   ) {
     let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
       filter: (c) => c.room.name === creep.room.name
@@ -1199,7 +1200,8 @@ function steal(creep) {
 
     if (
       thieveryTarget &&
-      creep.pos.getRangeTo(thieveryTarget) === 0
+      thieveryTarget.room &&
+      thieveryTarget.room.name === creep.room.name
     ) {
       // pickup any resources on the ground first since they expire
       let targetObject = helpers.getTarget(creep, 'droppedResource', { room: creep.room.name });
