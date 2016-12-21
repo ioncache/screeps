@@ -1301,9 +1301,7 @@ function transferTower(creep) {
   );
 
   if (towers.length > 0) {
-    towers.sort((a, b) => {
-      return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-    });
+    towers.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
     return transfer(creep, towers[0].id);
   }
 
@@ -1387,12 +1385,15 @@ function transfer(creep, transferTarget) {
 
       let transferType;
       if (target.structureType === STRUCTURE_STORAGE) {
+        // always transfer energy first
         if (creep.carry[RESOURCE_ENERGY]) {
           transferType = RESOURCE_ENERGY;
         } else {
           for (let carryType in creep.carry) {
             if (carryType !== RESOURCE_ENERGY) {
               transferType = carryType;
+              // quit after finding first non energy resource type
+              break;
             }
           }
         }

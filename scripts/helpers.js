@@ -147,18 +147,10 @@ function getTarget(creep, type, opts = {}) {
               if (opts.types) {
                 return opts.types.includes(structure.structureType);
               } else {
-                let excludeTypes = [STRUCTURE_LINK];
-
-                // ensure we keep a minimum level of energy in the room before powering towers
-                if (
-                  Game.rooms[creep.memory.homeRoom].energyAvailable <
-                  _.min([
-                    Game.rooms[creep.memory.homeRoom].energyCapacity * 0.25,
-                    300
-                  ])
-                ) {
-                  excludeTypes.push(STRUCTURE_TOWER);
-                }
+                let excludeTypes = [
+                  STRUCTURE_LINK,
+                  STRUCTURE_TOWER // energizers will handle towers
+                ];
 
                 return (
                   structure.room.name === creep.memory.homeRoom &&

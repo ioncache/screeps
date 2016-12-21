@@ -166,6 +166,14 @@ module.exports = {
   },
   masterSpawn: 'Spawn1',
   masterOwner: 'ioncache',
+  // maxHits: {
+  //   constructedWall: function(room) {
+  //     return Math.pow(1000, 1 + room.controller.level / 15);
+  //   },
+  //   rampart: function(room) {
+  //     return Math.pow(1000, 1 + room.controller.level / 10);
+  //   }
+  // }
   maxHits: {
     constructedWall: function(room) {
       return room.controller.level * 2500;
