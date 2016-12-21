@@ -515,6 +515,8 @@ class RoomManager {
         let remoteHarvestLocation = Game.flags[remoteHarvestLocationName];
 
         if (
+          remoteHarvestLocation &&
+          remoteHarvestLocation.room &&
           remoteHarvestLocation.room.controller.owned &&
           remoteHarvestLocation.room.controller.owned !== config.masterOwner
         ) {
