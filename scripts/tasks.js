@@ -320,12 +320,19 @@ function clearRoom(creep) {
               }
             }
           } else {
-            // 5. move near controller
-            if (
-              creep.room.controller &&
-              creep.pos.getRangeTo(creep.room.controller) > 2
-            ) {
-              flag = actions.moveTo(creep, creep.room.controller, 'raid');
+            // 5. destroy spawns
+            let spawns = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_SPAWN });
+
+            if (spawns.length > 0) {
+              flag = actions.attack(creep, spawns[0], 'raid');
+            } else {
+              // 6. move near controller and wait
+              if (
+                creep.room.controller &&
+                creep.pos.getRangeTo(creep.room.controller) > 2
+              ) {
+                flag = actions.moveTo(creep, creep.room.controller, 'raid');
+              }
             }
           }
         }
