@@ -196,7 +196,7 @@ function claim(creep) {
         }
       } else if (
         !Game.rooms[creep.memory.homeRoom].controller.reservation ||
-        Game.rooms[creep.memory.homeRoom].controller.username === config.masterOwner
+        Game.rooms[creep.memory.homeRoom].controller.owner.username === config.masterOwner
       ) {
         log.info(`claim: reserving new controller`);
         let reserveController = creep.reserveController(Game.rooms[creep.memory.homeRoom].controller);
@@ -222,7 +222,7 @@ function fillupMasterStorage(creep) {
 function fillup(creep, waitUntilFull = false, task) {
   let flag;
 
-  if (creep.carry.energy === creep.carryCapacity) {
+  if (creep.carry.energy >= creep.carryCapacity) {
     creep.memory.container = null;
     creep.memory.task = null;
     flag = false;
@@ -489,6 +489,13 @@ function harvest(creep) {
   return flag;
 }
 
+// TODO: implement
+function hunt(creep) {
+  log.info(`hunt: search and destroy`);
+
+  return false;
+}
+
 function mine(creep) {
   let flag;
 
@@ -641,13 +648,15 @@ function parking(creep) {
   return flag;
 }
 
+// TODO: implement
 function patrol(creep) {
-  // TODO: implement
   log.info(`patrol: well I would, but patrolling isn't implemented yet`);
 
   return false;
 }
 
+// TODO: make a dropped item queue, so that multiple creeps don't always swarm
+//       towards the same dropped item
 function pickup(creep) {
   let flag = true;
 
@@ -703,11 +712,21 @@ function pickup(creep) {
 // this may be because:
 // - the class for this type of creep has been upgraded
 // - a new class of creep would be better suited for this creep's job
+// - travel time for this type of creep back to the spawn for renewal
+//   would be too much, and just spawning a new one makes more sense
 //
 // this task will
+// - calculate when rebirth task should kick off based on
+//   - time to live of current creep
+//   - distance to spawn
+//   - number of turns to spawn creep
 // - trigger spawning of new creep
+// - set flag rebirthInProgress after triggering spawn so that
+//   multiple spawns don't occur
+// - give new creep a name to original but with added generation indicator
 // - copy current creep's memory to new creep
-// - set task of current creep to recycle
+// - set task of current creep to recycle -- maybe wait a bit so new creep gets
+//   near to old creep before triggering recycle task
 // - in the case of replacing this creep with one of a different kind
 //   then the population min values will get updated accordingly
 //   so that no new creeps spawn of this type when it recycles
@@ -756,7 +775,69 @@ function recycle(creep) {
   return true;
 }
 
-function renew(creep, nextTask) {
+// TODO:
+// - go to harvest spot
+// - harvest until full
+// - return to storage and drop off
+// - go renew
+// - repeat ad infinitum
+function remoteHarvest(creep) {
+  let flag;
+
+  let currentCarry = _.sum(creep.carry);
+
+  if (currentCarry >= creep.carryCapacity) {
+    // go transfer all resources
+    flag = transferMasterStorage(creep);
+  } else {
+    if (
+      (currentCarry === 0 &&
+      creep.ticksToLive < 1100) ||
+      creep.memory.task === 'continueRenew'
+    ) {
+      // go renew
+      creep.memory.task = 'renew';
+      flag = renew(creep, 'remoteHarvest', 1500);
+      if (creep.ticksToLive < 1490) {
+        creep.memory.task = 'continueRenew';
+      } else {
+        creep.memory.task = null;
+      }
+    } else {
+      // go remote harvest sucker
+
+      if (!creep.memory.remoteHarvestTarget) {
+        creep.memory.remoteHarvestTarget = helpers.getTarget(creep, 'remoteHarvestLocation');
+      }
+
+      // sadly there are no remote harvest locations
+      // which shouldn't really be possible since there should be
+      if (!creep.memory.remoteHarvestTarget) {
+        flag = false;
+      } else  {
+        let remoteHarvestLocation = Game.flags[creep.memory.remoteHarvestTarget];
+
+        if (creep.pos.getRangeTo(remoteHarvestLocation) !== 0) {
+          flag = actions.moveTo(creep, remoteHarvestLocation, 'remoteHarvest');
+        } else {
+          let sourceTarget = Game.getObjectById(creep.memory.sourceTarget);
+          if (!sourceTarget) {
+            sourceTarget = creep.pos.findClosestByRange(FIND_SOURCES);
+            creep.memory.sourceTarget = sourceTarget.id;
+          }
+
+          flag = actions.harvest(creep, sourceTarget, 'remoteHarvest');
+        }
+      }
+    }
+  }
+
+  return flag;
+}
+
+// TODO: need to update renew task so that creeps can determine distance to
+//       spawn and how long they need to get there before renewal
+function renew(creep, nextTask, maxTicksToLive = 750) {
   let flag;
 
   if (creep.memory.task === 'renew' || creep.ticksToLive < 300) {
@@ -796,7 +877,7 @@ function renew(creep, nextTask) {
           } else { // stick it out and wait for energy
             // transfer any held energy so we can renew
             if (creep.carry.energy > 0) {
-              let result = creep.transfer(spawn, RESOURCE_ENERGY);
+              creep.transfer(spawn, RESOURCE_ENERGY);
             } else {
               creep.memory.task = 'harvest'; // go harvest for energy to renew with
               creep.memory.target = helpers.getTarget(creep, 'source');
@@ -806,7 +887,7 @@ function renew(creep, nextTask) {
           break;
         case OK:
           log.info(`renew: renewing`);
-          if (creep.ticksToLive > 750) { // move on to other things
+          if (creep.ticksToLive >= maxTicksToLive) { // move on to other things
             creep.memory.target = null;
             creep.memory.task = nextTask || null;
             flag = true;
@@ -818,7 +899,7 @@ function renew(creep, nextTask) {
     }
   } else {
     creep.memory.target = nextTask || null;
-    creep.memory.task = 0;
+    creep.memory.task = null;
     flag = false;
   }
 
@@ -968,7 +1049,7 @@ function transferStorage(creep) {
 }
 
 function transferTower(creep) {
-  let towers = helpers. Game.rooms[creep.memory.homeRoom].find(
+  let towers = Game.rooms[creep.memory.homeRoom].find(
     FIND_STRUCTURES,
     {
       filter: (s) => {
@@ -1200,7 +1281,16 @@ function withdrawUpgrade(creep) {
   // finally try finding a storage near the controller to withdraw from
   target = helpers.getTarget(creep, 'controllerStorage');
   if (target) {
-    return withdraw(creep, target);
+    let storage = Game.getObjectById(target);
+    if (
+      creep.memory.role === 'energizer' ||
+      // always leave a minimum amount of energy in storage to
+      // account for emergencies -- energizers excluded
+      storage.store[RESOURCE_ENERGY] >=
+      (creep.room.controller.level * 5000 + 50)
+    ) {
+      return withdraw(creep, target);
+    }
   }
 
   return false;
@@ -1344,6 +1434,7 @@ module.exports = {
   getWorkEnergy: getWorkEnergy,
   guard: guard,
   harvest: harvest,
+  hunt: hunt,
   mine: mine,
   motivate: motivate,
   parking: parking,
@@ -1351,12 +1442,14 @@ module.exports = {
   pickup: pickup,
   rebirth: rebirth,
   recycle: recycle,
+  remoteHarvest: remoteHarvest,
   renew: renew,
   staticHarvest: staticHarvest,
   transfer: transfer,
   transferMasterStorage: transferMasterStorage,
   transferResources: transferResources,
   transferStorage: transferStorage,
+  transferTower: transferTower,
   transferUpgrade: transferUpgrade,
   withdraw: withdraw,
   withdrawResources: withdrawResources,

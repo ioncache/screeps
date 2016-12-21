@@ -14,6 +14,7 @@ class CreepBuilder extends CreepBase {
       'renew',
       'build',
       'fix',
+      'withdrawUpgrade',
       'getWorkEnergy'
     ];
   }
@@ -25,7 +26,7 @@ class CreepBuilder extends CreepBase {
 
     super.activate();
 
-    log.finish(`do you like to build it, build it`);
+    log.finish(`do you like to build it, build it?`);
   }
 }
 

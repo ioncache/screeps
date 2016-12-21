@@ -24,9 +24,9 @@ class CreepBase {
     // if the creep already has an assigned task, do that first
     if (creep.memory.task) {
       let task = tasks[creep.memory.task];
-       if (task) {
-         result = task(creep);
-       }
+      if (task) {
+        result = task(creep);
+      }
     }
 
     // continue with other tasks if original task allows

@@ -9,12 +9,14 @@ let classes = {
   builder: require('class.creep.builder'),
   carter: require('class.creep.carter'),
   courier: require('class.creep.courier'),
+  energizer: require('class.creep.energizer'),
   fixer: require('class.creep.fixer'),
   guard: require('class.creep.guard'),
   harvester: require('class.creep.harvester'),
   longHauler: require('class.creep.longHauler'),
   miner: require('class.creep.miner'),
   pioneer: require('class.creep.pioneer'),
+  remoteHarvester: require('class.creep.remoteHarvester'),
   supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),
   upgrader: require('class.creep.upgrader')
@@ -111,13 +113,15 @@ class RoomManager {
       if (this.creepList[creepName]) {
         let creepObject = this.creepList[creepName];
         if (!Game.creeps[creepName].spawning) {
-          // try {
+          // in case there is an error in an individual creep's
+          // logic, catch error and move on to next creep
+          try {
             creepObject.activate();
-          // }
-          // catch (err) {
-          //   console.log(err);
-          //   log.error(creepName, err);
-          // }
+          } catch (err) {
+            log.log(`##### CATCH ERROR #####`);
+            log.log('Creep: ', creepName);
+            log.log(err);
+          }
         }
       }
     }
@@ -167,46 +171,80 @@ class RoomManager {
 
   activateTowers() {
     let towers = this.room.find(FIND_STRUCTURES, {
-      filter: (structure) => {
-        return structure.structureType === STRUCTURE_TOWER;
-      }
+      filter: (s) => s.structureType === STRUCTURE_TOWER
     });
 
-    towers.sort((a, b) => {
-      b.energy - a.energy;
+    towers.sort((a, b) => b.energy - a.energy);
+
+    // only find hostile creeps that have dangerous bits in them
+    let dangerousParts = [
+      ATTACK,
+      CLAIM,
+      // HEAL,
+      RANGED_ATTACK,
+      WORK
+    ];
+
+    let allHostileCreeps = this.room.find(FIND_HOSTILE_CREEPS, {
+      filter: (c) => c.body.some((p) => dangerousParts.includes(p.type))
     });
 
+    // notify by email once very 5 minutes, but do it immediately
+    let currentDate = new Date();
+    let currentTimestamp = currentDate.getTime();
+    if (
+      allHostileCreeps.length > 0 &&
+      (
+        !this.room.memory.lastHostileTimestamp ||
+        (this.room.memory.lastHostileTimestamp + 30000) < currentTimestamp
+      )
+    ) {
+      let message = `Room ${this.room.name} is getting attacked by ${allHostileCreeps.length} `;
+      message += `creep${allHostileCreeps.length > 1 ? 's' : ''} at ${currentDate}`;
+      Game.notify(message);
+      this.room.memory.lastHostileTimestamp = currentTimestamp;
+    }
+
+    let possibleHostileTargets = [];
+
+    // TODO: find potential targets for each tower,
+    //       determine which target is most dangerous / closest / ???
+    //       then ensure all towers fire at the same target
     for (let tower of towers) {
-      let hostileCreeps = tower.room.find(FIND_HOSTILE_CREEPS);
+      // only target hostile creeps within a certain range of a tower
+      // to make tower damage more efficient
+      let hostileCreeps = allHostileCreeps.filter((c) => {
+        return tower.pos.getRangeTo(c) <= 18;
+      });
 
       if (hostileCreeps.length > 0) {
         let hostileTarget = null;
 
-        let hostileHealers = hostileCreeps.filter((c) => {
-          return c.body.filter((p) => {
-            return p.type === HEAL;
-          }).length > 0;
-        });
-
-        // prioritize healers as they are a pain in the neck
-        if (hostileHealers.length > 0) {
-          hostileHealers.sort((a, b) => {
-            return tower.pos.getRangeTo(a) - tower.pos.getRangeTo(b);
-          });
-
-          hostileTarget = hostileHealers[0];
-        } else {
+        // let hostileHealers = hostileCreeps.filter((c) => {
+        //   return c.body.filter((p) => {
+        //     return p.type === HEAL;
+        //   }).length > 0;
+        // });
+        //
+        // // prioritize healers as they are a pain in the neck
+        // if (hostileHealers.length > 0) {
+        //   hostileHealers.sort((a, b) => {
+        //     return tower.pos.getRangeTo(a) - tower.pos.getRangeTo(b);
+        //   });
+        //
+        //   hostileTarget = hostileHealers[0];
+        // } else {
           hostileCreeps.sort((a, b) => {
             return tower.pos.getRangeTo(a) - tower.pos.getRangeTo(b);
           });
 
           hostileTarget = hostileCreeps[0];
-        }
+        // }
 
         if (hostileTarget) {
-          tower.attack(hostileTarget);
+          possibleHostileTargets.push(hostileTarget);
         }
-      } else {
+      } else if (!allHostileCreeps.length) { // skip this section if there are any hostiles whether in range or not
         let woundedCreep =  tower.pos.findClosestByRange(FIND_MY_CREEPS, {
             filter: (creep) => {
                 return creep.hits < creep.hitsMax;
@@ -237,6 +275,27 @@ class RoomManager {
             tower.repair(furthestDamagedStructures[0]);
           }
         }
+      }
+    }
+
+    if (possibleHostileTargets.length > 0) {
+      let averageRanges = [];
+
+      for (let target of possibleHostileTargets) {
+        let averageRange = 0;
+
+        for (let tower of towers) {
+          averageRange += tower.pos.getRangeTo(target);
+        }
+
+        averageRanges.push(Math.floor(averageRange / towers.length));
+      }
+
+      let minRange = _.min(averageRanges);
+      let targetIndex = _.findIndex(averageRanges, (r) => r === minRange);
+
+      for (let tower of towers) {
+        tower.attack(possibleHostileTargets[targetIndex]);
       }
     }
   }
@@ -329,6 +388,7 @@ class RoomManager {
           return /^GuardPost/.test(post.name);
         }
       });
+
       if (
         guardPosts.length > 0 &&
         this.creepConfig.fixer.currentCount >= Math.ceil(this.creepConfig.fixer.min / 2) &&
@@ -347,14 +407,14 @@ class RoomManager {
       }
     }
 
-    // manage static harvester populaation based on StaticHarvestFlags present
-    let staticHarvestLocations = this.room.find(FIND_FLAGS, {
-      filter: (flag) => {
-        return /^StaticHarvest/.test(flag.name);
-      }
-    });
-
     if (this.creepConfig.staticHarvester) {
+      // manage static harvester populaation based on StaticHarvestFlags present
+      let staticHarvestLocations = this.room.find(FIND_FLAGS, {
+        filter: (flag) => {
+          return /^StaticHarvest/.test(flag.name);
+        }
+      });
+
       // manage regular harvester population based on # of static harvesters
       this.creepConfig.staticHarvester.min = staticHarvestLocations.length;
       if (this.creepConfig.harvester) {
@@ -396,7 +456,7 @@ class RoomManager {
         }
       }
 
-      // manager courier and banker/supplier population based on current static harvesters
+      // manage courier and banker/supplier population based on current static harvesters
       if (
         this.creepConfig.courier &&
         this.creepConfig.staticHarvester.currentCount > 0
@@ -426,14 +486,69 @@ class RoomManager {
       }
     }
 
-    // 1 energizer per tower
+    // 1 energizer per tower, or just 1 for small rooms
     if (this.creepConfig.energizer) {
       let towers = this.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
           return structure.structureType === STRUCTURE_TOWER;
         }
       });
-      this.creepConfig.energizer.min = towers.length;
+
+      let sources = this.room.find(FIND_SOURCES);
+
+      if (sources.length === 1) {
+        this.creepConfig.energizer.min = 1;
+      } else {
+        this.creepConfig.energizer.min = Math.ceil(towers.length / 2);
+      }
+    }
+
+    if (this.creepConfig.remoteHarvester) {
+      let remoteHarvestLocations = Object.keys(Game.flags).filter((flagName) => {
+        return /^RemoteHarvest/.test(flagName);
+      });
+      let removed = [];
+
+      // remove any remote harvest flags if the room they reside in
+      // currently owned by anyone other than script owner
+      for (let remoteHarvestLocationName of remoteHarvestLocations) {
+        let remoteHarvestLocation = Game.flags[remoteHarvestLocationName];
+
+        if (
+          remoteHarvestLocation.room.controller.owned &&
+          remoteHarvestLocation.room.controller.owned !== config.masterOwner
+        ) {
+          removed.push(remoteHarvestLocationName);
+          remoteHarvestLocation.remove();
+        }
+      }
+
+      // remove any no longer existing flags from remote location list
+      _.pullAll(remoteHarvestLocations, removed);
+
+      if (remoteHarvestLocations.length > 0) {
+        // room.find command more cpu intensive than Object.keys.filter
+        // so only check if room is master room when there are actual
+        // remote harvest locations
+        let roomSpawns = this.room.find(FIND_MY_SPAWNS);
+        let roomSpawnNames = _.map(roomSpawns, (s) => s.name);
+
+        // for now only spawn remote harvesters from master spawn
+        if (
+          roomSpawnNames.includes(config.masterSpawn) &&
+          this.creepConfig.remoteHarvester.min !== remoteHarvestLocations.length
+        ) {
+          // check to see if room can even make a remoteHarvester
+          let tempRemoteHarvester = new classes.remoteHarvester();
+
+          if (
+            helpers.calculateCreepCost(tempRemoteHarvester.parts) * 1.25 <=
+            this.room.energyCapacityAvailable
+          ) {
+            this.creepConfig.remoteHarvester.min = remoteHarvestLocations.length;
+          }
+        }
+      }
     }
   }
 

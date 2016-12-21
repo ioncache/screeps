@@ -8,9 +8,8 @@ class CreepEnergizer extends CreepBase {
     super(role, parts);
     this.tasks = [
       'renew',
-      'transferResources',
       'transferTower',
-      'pickup',
+      'withdrawUpgrade',
       'fillup'
     ];
   }
@@ -18,11 +17,11 @@ class CreepEnergizer extends CreepBase {
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `guaranteed* delivery tomorrow before noon`);
+    log.start(creep.name, `Hey McFly, you bojo, those boards don't work on water! `);
 
     super.activate();
 
-    log.finish(`*guarantee not a real guarantee`);
+    log.finish(`Unless you've got POWER!`);
   }
 }
 

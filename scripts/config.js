@@ -10,7 +10,7 @@ module.exports = {
       },
       builder: {
         class: 'builder',
-        min: 3,
+        min: 2,
         priority: 3
       },
       carter: {
@@ -23,7 +23,7 @@ module.exports = {
         min: 0,
         priority: 1.75
       },
-      courier: {
+      energizer: {
         class: 'energizer',
         min: 0,
         priority: 4
@@ -54,6 +54,11 @@ module.exports = {
         min: 0,
         priority: 50
       },
+      remoteHarvester: {
+        class: 'remoteHarvester',
+        min: 0,
+        priority: 15
+      },
       staticHarvester: {
         class: 'staticHarvester',
         min: 0,
@@ -82,6 +87,11 @@ module.exports = {
         min: 1,
         parts: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
         priority: 2
+      },
+      energizer: {
+        class: 'energizer',
+        min: 0,
+        priority: 4
       },
       harvester: {
         class: 'harvester',

@@ -289,6 +289,29 @@ function getTarget(creep, type, opts = {}) {
 
       break;
 
+    // special flag indicating a place for remoteHarvesters to stand
+    case 'remoteHarvestLocation':
+      let remoteHarvestLocations = Object.keys(Game.flags).filter((flagName) => {
+        return /^RemoteHarvest/.test(flagName);
+      });
+
+      let remoteHarvesters = Object.keys(Game.creeps).filter((creepName) => {
+        return Game.creeps[creepName].memory.role === 'remoteHarvester';
+      });
+
+      let remoteAlreadyTaken = _.map(remoteHarvesters, (creepName) => {
+        return Game.creeps[creepName].memory.remoteTarget;
+      });
+
+      for (let location of remoteHarvestLocations) {
+        if (!remoteAlreadyTaken.includes(location)) {
+          target = location;
+          break;
+        }
+      }
+
+      break;
+
     // of opts.nearest is true will just find the nearest source
     // otherwise will evenly distribute creeps across sources in the room
     case 'source':
@@ -369,12 +392,12 @@ function getTarget(creep, type, opts = {}) {
         }
       });
 
-      let alreadyTaken = _.map(staticHarvesters, (harvester) => {
+      let staticAlreadyTaken = _.map(staticHarvesters, (harvester) => {
         return harvester.memory.staticTarget;
       });
 
       for (let location of staticHarvestLocations) {
-        if (!alreadyTaken.includes(location.name)) {
+        if (!staticAlreadyTaken.includes(location.name)) {
           target = location.name;
           break;
         }
@@ -434,8 +457,9 @@ function moveAwayFromSource(creep, sourceId) {
   log.info(`moving away from source`);
 }
 
+// TODO: generate a random or incremental # as name if all names are currently taken for the role requested
 function generateName(role = 'harvester') {
-  let title = strings.titles[role] || _.upperFirst(role);
+  let title = strings.titles[role] || role;
 
   let currentNames = Object.keys(Game.creeps);
   let name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
