@@ -1167,6 +1167,7 @@ function steal(creep) {
   } else if (_.sum(creep.carry) >= creep.carryCapacity) {
     flag = false;
   } else {
+    creep.memory.task = 'steal';
     let thieveryTarget =  Game.flags[creep.memory.thieveryTarget];
 
     if (
