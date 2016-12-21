@@ -524,7 +524,7 @@ class RoomManager {
       }
 
       // remove any no longer existing flags from remote location list
-      _.pullAll(remoteHarvestLocations, removed);
+      remoteHarvestLocations = remoteHarvestLocations.filter((f) => !removed.includes(f));
 
       if (remoteHarvestLocations.length > 0) {
         // room.find command more cpu intensive than Object.keys.filter
@@ -548,6 +548,8 @@ class RoomManager {
             this.creepConfig.remoteHarvester.min = remoteHarvestLocations.length;
           }
         }
+      } else {
+        this.creepConfig.remoteHarvester.min = 0;
       }
     }
   }
