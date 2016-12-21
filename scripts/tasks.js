@@ -626,22 +626,33 @@ function harvest(creep) {
 function hunt(creep) {
   let flag;
 
+  let keeperTarget = Game.flags[creep.memory.keeperTarget];
+
   if (creep.hits < creep.hitsMax) {
     creep.heal(creep);
   }
 
-  let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
-    filter: (c) => c.room.name === creep.room.name
-  });
-
-  if (target) {
-    flag = actions.attack(creep, target, 'hunt');
-  } else {
-    let lairs = creep.room.find(FIND_STRUCTURES, {
-      filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+  if (
+    keeperTarget &&
+    creep.pos.getRangeTo(keeperTarget) === 0
+  ) {
+    let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+      filter: (c) => c.room.name === creep.room.name
     });
-    lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
-    flag = actions.moveTo(creep, lairs[0], 'hunt');
+
+    if (target) {
+      flag = actions.attack(creep, target, 'hunt');
+    } else {
+      let lairs = creep.room.find(FIND_STRUCTURES, {
+        filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+      });
+      lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
+      flag = actions.moveTo(creep, lairs[0], 'hunt');
+    }
+  } else if (keeperTarget) {
+    flag = actions.moveTo(creep, keeperTarget, 'hunt');
+  } else { // do nothing if there is no current keeper target set
+    flag = false;
   }
 
   return flag;
@@ -1184,7 +1195,7 @@ function steal(creep) {
     flag = false;
   } else {
     creep.memory.task = 'steal';
-    let thieveryTarget =  Game.flags[creep.memory.thieveryTarget];
+    let thieveryTarget = Game.flags[creep.memory.thieveryTarget];
 
     if (
       thieveryTarget &&
