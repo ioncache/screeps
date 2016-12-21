@@ -623,11 +623,28 @@ function harvest(creep) {
   return flag;
 }
 
-// TODO: implement
 function hunt(creep) {
-  log.info(`hunt: search and destroy`);
+  let flag;
 
-  return false;
+  if (creep.hits < creep.hitsMax) {
+    creep.heal(creep);
+  }
+
+  let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+    filter: (c) => c.room.name === creep.room.name
+  });
+
+  if (target) {
+    flag = actions.attack(creep, target, 'hunt');
+  } else {
+    let lairs = creep.room.find(FIND_STRUCTURES, {
+      filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+    });
+    lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
+    flag = actions.moveTo(creep, lairs[0], 'hunt');
+  }
+
+  return flag;
 }
 
 function mine(creep) {

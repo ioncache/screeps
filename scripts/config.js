@@ -44,6 +44,11 @@ module.exports = {
         min: 8,
         priority: 1
       },
+      keeperHunter: {
+        class: 'keeperHunter',
+        min: 0,
+        priority: 30
+      },
       miner: {
         class: 'miner',
         min: 0,
@@ -109,6 +114,11 @@ module.exports = {
         min: 0,
         parts: [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         priority: 3
+      },
+      keeperHunter: {
+        class: 'keeperHunter',
+        min: 0,
+        priority: 30
       },
       longHauler: {
         class: 'longHauler',

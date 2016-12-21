@@ -3,7 +3,7 @@
 let CreepBase = require('class.creep.base');
 let log = require('logger');
 
-class KepperHunter extends CreepBase {
+class KeeperHunter extends CreepBase {
   constructor(
     role = 'keeperHunter',
     parts = [
@@ -36,4 +36,4 @@ class KepperHunter extends CreepBase {
   }
 }
 
-module.exports = KepperHunter;
+module.exports = KeeperHunter;

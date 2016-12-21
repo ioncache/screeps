@@ -13,13 +13,14 @@ let classes = {
   fixer: require('class.creep.fixer'),
   guard: require('class.creep.guard'),
   harvester: require('class.creep.harvester'),
+  keeperHunter: require('class.creep.keeperHunter'),
   longHauler: require('class.creep.longHauler'),
   miner: require('class.creep.miner'),
   pioneer: require('class.creep.pioneer'),
   raider: require('class.creep.raider'),
   remoteHarvester: require('class.creep.remoteHarvester'),
-  supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),
+  supplier: require('class.creep.supplier'),
   thief: require('class.creep.thief'),
   upgrader: require('class.creep.upgrader')
 };
