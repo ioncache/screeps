@@ -152,58 +152,65 @@ function claim(creep) {
     if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
       flag = actions.moveTo(creep, Game.flags[target], 'claim');
     } else {
-      creep.reserveController(creep.room.controller);
-      if (creep.room.controller.owner.username === config.masterOwner) {
-        log.info(`claim: I already own the controller in this room`);
-        Game.flags[creep.memory.target].remove();
-        creep.memory.target = null;
-        creep.memory.task = null;
-        flag = false;
-      } else if (Object.keys(Game.rooms).length < Game.gcl.level) { // TODO: fix, object.keys is wrong
-        log.info(`claim: attempting to claim ${creep.memory.target}`);
-        let claimResult = creep.claimController(creep.room.controller);
-        switch (claimResult) {
-          case ERR_FULL:
-            log.info(`claim: already own 3 controllers in novice area, removing target flag ${creep.memory.target}`);
-            Game.flags[creep.memory.target].remove();
-            creep.memory.target = null;
-            creep.memory.task = null;
-            flag = false;
-            break;
-          case ERR_GCL_NOT_ENOUGH:
-            log.info(`claim: global control level not high enough`);
-            flag = true;
-            break;
-          case ERR_INVALID_TARGET:
-            log.info(`claim: cannot claim this controller`);
-            creep.memory.target = null;
-            creep.memory.task = null;
-            flag = false;
-            break;
-          case ERR_NOT_IN_RANGE:
-            flag = actions.moveTo(creep, creep.room.controller, 'claim');
-            break;
-          case OK:
-            log.info(`claim: controller claimed huzzah`);
-            Game.flags[creep.memory.target].remove();
-            creep.memory.target = null;
-            creep.memory.task = null;
-            flag = true;
-            break;
-          default:
-            log.info(`claim: unknown response '${claimResult}'`);
-            flag = true;
-        }
-      } else if (
-        !creep.room.controller.reservation ||
-        creep.room.controller.owner.username === config.masterOwner
+      if (
+        creep.room.controller.owner &&
+        creep.room.controller.owner.username !== config.masterOwner
       ) {
-        log.info(`claim: reserving new controller`);
-        let reserveController = creep.reserveController(creep.room.controller);
-        flag = true;
+        flag = actions.attack(creep, creep.rooom.controller, 'claim', 'attackController');
       } else {
-        log.info(`claim: current gcl not high enough to claim new room`);
-        flag = true;
+        creep.reserveController(creep.room.controller);
+        if (creep.room.controller.owner.username === config.masterOwner) {
+          log.info(`claim: I already own the controller in this room`);
+          Game.flags[creep.memory.target].remove();
+          creep.memory.target = null;
+          creep.memory.task = null;
+          flag = false;
+        } else if (Object.keys(Game.rooms).length < Game.gcl.level) { // TODO: fix, object.keys is wrong
+          log.info(`claim: attempting to claim ${creep.memory.target}`);
+          let claimResult = creep.claimController(creep.room.controller);
+          switch (claimResult) {
+            case ERR_FULL:
+              log.info(`claim: already own 3 controllers in novice area, removing target flag ${creep.memory.target}`);
+              Game.flags[creep.memory.target].remove();
+              creep.memory.target = null;
+              creep.memory.task = null;
+              flag = false;
+              break;
+            case ERR_GCL_NOT_ENOUGH:
+              log.info(`claim: global control level not high enough`);
+              flag = true;
+              break;
+            case ERR_INVALID_TARGET:
+              log.info(`claim: cannot claim this controller`);
+              creep.memory.target = null;
+              creep.memory.task = null;
+              flag = false;
+              break;
+            case ERR_NOT_IN_RANGE:
+              flag = actions.moveTo(creep, creep.room.controller, 'claim');
+              break;
+            case OK:
+              log.info(`claim: controller claimed huzzah`);
+              Game.flags[creep.memory.target].remove();
+              creep.memory.target = null;
+              creep.memory.task = null;
+              flag = true;
+              break;
+            default:
+              log.info(`claim: unknown response '${claimResult}'`);
+              flag = true;
+          }
+        } else if (
+          !creep.room.controller.reservation ||
+          creep.room.controller.owner.username === config.masterOwner
+        ) {
+          log.info(`claim: reserving new controller`);
+          let reserveController = creep.reserveController(creep.room.controller);
+          flag = true;
+        } else {
+          log.info(`claim: current gcl not high enough to claim new room`);
+          flag = true;
+        }
       }
     }
   }  else {
