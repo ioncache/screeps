@@ -15,8 +15,7 @@ class CreepRaider extends CreepBase {
   ) {
     super(role, parts);
     this.tasks = [
-      'guard',
-      'patrol'
+      'clearRoom'
     ];
   }
 
