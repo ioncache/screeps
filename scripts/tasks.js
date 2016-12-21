@@ -225,11 +225,14 @@ function claim(creep) {
 function clearRoom(creep) {
   let flag;
 
+  let attackBodyParts = creep.body.filter((p) => {
+    return [ATTACK, RANGED_ATTACK].includes(p.type) && p.hits > 0;
+  });
+
   // run away to home room to heal if needed
-  let bodyParts = _.map(creep.body, 'type');
   if (
     creep.hits < creep.hitsMax &&
-    !bodyParts.includes(ATTACK)
+    attackBodyParts === 0
   ) {
     flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'raid');
   } else {
@@ -245,41 +248,41 @@ function clearRoom(creep) {
       raidTarget.room &&
       raidTarget.room.name === creep.room.name
     ) {
-      let wallTarget;
+      let obstructionTarget;
 
-      if (creep.memory.wallTarget !== 'none') {
-        wallTarget = Game.flags[creep.memory.wallTarget];
+      if (creep.memory.obstructionTarget !== 'none') {
+        obstructionTarget = Game.flags[creep.memory.obstructionTarget];
 
-        if (!wallTarget) {
-          wallTarget = creep.pos.findClosestByRange(FIND_FLAGS, {
-            filter: (f) => /^WallTarget/.test(f.name)
+        if (!obstructionTarget) {
+          obstructionTarget = creep.pos.findClosestByRange(FIND_FLAGS, {
+            filter: (f) => /^obstructionTarget/.test(f.name)
           });
         }
 
-        if (!wallTarget) {
-          creep.memory.wallTarget = 'none';
+        if (!obstructionTarget) {
+          creep.memory.obstructionTarget = 'none';
         }
       }
 
-      let wallObject;
-      if (wallTarget) {
-        let look = wallTarget.pos.look();
+      let obstructionObject;
+      if (obstructionTarget) {
+        let look = obstructionTarget.pos.look();
 
         for (let i of look) {
           if (
             i.structure &&
-            i.structure.structureType === STRUCTURE_WALL
+            [STRUCTURE_RAMPART, STRUCTURE_WALL].includes(i.structure.structureType)
           ) {
-            wallObject = i.structure;
+            obstructionObject = i.structure;
             break;
           }
         }
       }
 
-      // TODO: maybe not go back and destroy wall object if it's already
+      // TODO: maybe not go back and destroy obstruction object if it's already
       //       been destroyed and rebuilt
-      if (wallObject) {
-        flag = actions.attack(creep, wallObject, 'raid');
+      if (obstructionObject) {
+        flag = actions.attack(creep, obstructionObject, 'raid');
       } else {
         // attack things!
 
