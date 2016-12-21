@@ -390,29 +390,13 @@ class RoomManager {
     }
 
     if (this.creepConfig.guard) {
-      // manage number of guards based on population levels
       let guardPosts = this.room.find(FIND_FLAGS, {
         filter: (post) => {
           return /^GuardPost/.test(post.name);
         }
       });
 
-      if (
-        guardPosts.length > 0 &&
-        this.creepConfig.fixer.currentCount >= Math.ceil(this.creepConfig.fixer.min / 2) &&
-        this.creepConfig.builder.currentCount >= Math.ceil(this.creepConfig.builder.min / 2) &&
-        (
-          this.creepConfig.staticHarvester &&
-          (this.creepConfig.harvester.currentCount >= Math.ceil(this.creepConfig.harvester.min / 2) ||
-          this.creepConfig.staticHarvester.currentCount > 0)
-        ) &&
-        this.creepConfig.upgrader.currentCount >= Math.ceil(this.creepConfig.upgrader.min / 2)
-      ) {
-        log.log('resetting guard count for some reason', this.creepConfig.staticHarvester.currentCount);
-        this.creepConfig.guard.min = guardPosts.length;
-      } else {
-        this.creepConfig.guard.min = 0;
-      }
+      this.creepConfig.guard.min = guardPosts.length;
     }
 
     if (this.creepConfig.staticHarvester) {
