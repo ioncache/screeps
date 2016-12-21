@@ -1172,8 +1172,7 @@ function steal(creep) {
 
     if (
       thieveryTarget &&
-      thieveryTarget.room &&
-      thieveryTarget.room.name === creep.room.name
+      creep.pos.getRangeTo(thieveryTarget) === 0
     ) {
       // pickup any resources on the ground first since they expire
       let targetObject = helpers.getTarget(creep, 'droppedEnergy', { room: creep.room.name });

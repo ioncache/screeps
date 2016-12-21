@@ -178,9 +178,14 @@ class RoomManager {
 
     towers.sort((a, b) => b.energy - a.energy);
 
+    // TODO: still find all hostile creeps, priortize dangerous ones
+    //       pick off others later, or slowly over time, or only if they
+    //       block access to spawn, tower, source, etc.
+
     // only find hostile creeps that have dangerous bits in them
     let dangerousParts = [
       ATTACK,
+      //CARRY, // because they can steal from containers and take any dropped resources
       CLAIM,
       // HEAL,
       RANGED_ATTACK,
@@ -191,14 +196,14 @@ class RoomManager {
       filter: (c) => c.body.some((p) => dangerousParts.includes(p.type))
     });
 
-    // notify by email once very 5 minutes, but do it immediately
+    // notify by email once every 5 minutes, but do it immediately
     let currentDate = new Date();
     let currentTimestamp = currentDate.getTime();
     if (
       allHostileCreeps.length > 0 &&
       (
         !this.room.memory.lastHostileTimestamp ||
-        (this.room.memory.lastHostileTimestamp + 30000) < currentTimestamp
+        (this.room.memory.lastHostileTimestamp + 600000) < currentTimestamp
       )
     ) {
       let message = `Room ${this.room.name} is getting attacked by ${allHostileCreeps.length} `;
