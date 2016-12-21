@@ -4,7 +4,10 @@ let CreepBase = require('class.creep.base');
 let log = require('logger');
 
 class CreepPioneer extends CreepBase {
-  constructor(role = 'pioneer', parts = [CLAIM, MOVE, MOVE, MOVE, MOVE, MOVE]) {
+  constructor(role = 'pioneer', parts = [
+    CLAIM, CLAIM, CLAIM, CLAIM, CLAIM,
+    MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
+  ]) {
     super(role, parts);
     this.tasks = [
       'claim'

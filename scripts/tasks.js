@@ -156,7 +156,7 @@ function claim(creep) {
         creep.room.controller.owner &&
         creep.room.controller.owner.username !== config.masterOwner
       ) {
-        flag = actions.attack(creep, creep.rooom.controller, 'claim', 'attackController');
+        flag = actions.attack(creep, creep.room.controller, 'claim', 'attackController');
       } else {
         creep.reserveController(creep.room.controller);
         if (creep.room.controller.owner.username === config.masterOwner) {
