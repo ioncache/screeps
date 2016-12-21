@@ -40,6 +40,10 @@ function attack(creep, target, task, attackType = 'attack') {
   return flag;
 }
 
+function rangedAttack(creep, target, task) {
+  return attack(creep, target, task, 'rangedAttack');
+}
+
 function harvest(creep, target, task) {
   let flag;
 

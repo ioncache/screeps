@@ -12,6 +12,7 @@ class CreepGuard extends CreepBase {
   ]) {
     super(role, parts);
     this.tasks = [
+      'renew',
       'guard',
       'patrol'
     ];

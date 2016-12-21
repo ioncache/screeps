@@ -536,10 +536,6 @@ function guard(creep) {
 
   if (post) {
     creep.memory.post = post;
-    if (creep.memory.task !== 'guard') {
-      creep.memory.task = 'guard';
-      creep.say('guarding');
-    }
 
     let guardPosts = Game.rooms[creep.memory.homeRoom].find(FIND_FLAGS, {
       filter: (post) => {
