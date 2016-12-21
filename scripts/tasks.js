@@ -1175,15 +1175,17 @@ function steal(creep) {
 
       if (targetObject) {
         flag = pickup(creep, targetObject);
+        flag = true;
+        creep.memory.task = 'steal';
       } else {
         // steal any resources from resource holders
         let containers = creep.room.find(
           FIND_STRUCTURES,
           {
-            filter: (store) => {
+            filter: (c) => {
               return (
-                store.structureType === STRUCTURE_CONTAINER &&
-                _.sum(store.store) > 0
+                c.structureType === STRUCTURE_CONTAINER &&
+                _.sum(c.store) > 0
               );
             }
           }
@@ -1193,7 +1195,7 @@ function steal(creep) {
           containers.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
 
           for (let i in containers[0].store) {
-            if (containers[0].hasOwnProperty(i)) {
+            if (containers[0].store.hasOwnProperty(i)) {
               flag = actions.withdraw(creep, containers[0], 'steal', i);
               if (flag) {
                 break;
@@ -1210,6 +1212,11 @@ function steal(creep) {
       flag = actions.moveTo(creep, thieveryTarget, 'steal');
     } else { // do nothing if there is no current thievery target set
       flag = false;
+    }
+
+    // don't move on to other tasks if creep has nothing on him
+    if (!flag && _.sum(creep.carry) === 0) {
+      flag = true;
     }
   }
 
