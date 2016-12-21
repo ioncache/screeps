@@ -193,6 +193,7 @@ let titles = {
   scout: 'Vanguard',
   staticHarvester: 'Stockpiler',
   supplier: 'Provisioner',
+  thief: 'Burglar',
   upgrader: 'Enhancer'
 };
 
