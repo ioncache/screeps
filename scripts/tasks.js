@@ -226,9 +226,10 @@ function clearRoom(creep) {
   let flag;
 
   // run away to home room to heal if needed
+  let bodyParts = _.map(creep.body, 'type');
   if (
     creep.hits < creep.hitsMax &&
-    !creep.body.includes(ATTACK)
+    !bodyParts.includes(ATTACK)
   ) {
     flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'raid');
   } else {
