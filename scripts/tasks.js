@@ -768,14 +768,13 @@ function parking(creep) {
   ) {
     actions.moveTo(creep, parking, 'parking');
     creep.memory.task = 'parking';
-    creep.memory.parkingMeter = 10;
+    creep.memory.parkingMeter = 10; // ticks to go park for
     flag = true;
   } else {
     creep.memory.parkingMeter -= 1;
-    if (creep.memory.parkingMeter) {
-      renew(creep, 'parking');
-    } else {
+    if (!creep.memory.parkingMeter) {
       creep.memory.task = null;
+      flag = false;
     }
   }
 
@@ -796,8 +795,8 @@ function pickup(creep, targetObject) {
 
   if (creep.carry.energy < creep.carryCapacity) {
     // always get a new target, if for some reason there is other
-    // droppedEnergy closer, might as well get that instead of original
-    let target = targetObject || helpers.getTarget(creep, 'droppedEnergy');
+    // droppedResource closer, might as well get that instead of original
+    let target = targetObject || helpers.getTarget(creep, 'droppedResource');
 
     // if there is no target at this point, no valid target was found
     if (!target) {
@@ -1175,7 +1174,7 @@ function steal(creep) {
       creep.pos.getRangeTo(thieveryTarget) === 0
     ) {
       // pickup any resources on the ground first since they expire
-      let targetObject = helpers.getTarget(creep, 'droppedEnergy', { room: creep.room.name });
+      let targetObject = helpers.getTarget(creep, 'droppedResource', { room: creep.room.name });
 
       if (targetObject) {
         flag = pickup(creep, targetObject);

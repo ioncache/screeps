@@ -111,8 +111,8 @@ function getTarget(creep, type, opts = {}) {
       }
       break;
 
-    case 'droppedEnergy':
-      let droppedEnergy = Game.rooms[targetRoom].find(
+    case 'droppedResource':
+      let droppedResource = Game.rooms[targetRoom].find(
         FIND_DROPPED_ENERGY,
         {
           filter: (i) => {
@@ -121,11 +121,11 @@ function getTarget(creep, type, opts = {}) {
         }
       );
 
-      if (droppedEnergy.length > 0) {
-        droppedEnergy.sort((a, b) => {
+      if (droppedResource.length > 0) {
+        droppedResource.sort((a, b) => {
           return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
         });
-        target = droppedEnergy[0].id;
+        target = droppedResource[0].id;
       }
       break;
 
@@ -429,7 +429,6 @@ function getTarget(creep, type, opts = {}) {
       }
 
       break;
-
 
     default:
   }
