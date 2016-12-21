@@ -233,6 +233,7 @@ function clearRoom(creep) {
 
     // determine if creep is in raid target room or not
     if (
+      raidTarget &&
       raidTarget.room &&
       raidTarget.room.name === creep.room.name
     ) {
@@ -257,8 +258,11 @@ function clearRoom(creep) {
         let look = wallTarget.pos.look();
 
         for (let i of look) {
-          if (i.type === STRUCTURE_WALL) {
-            wallObject = i;
+          if (
+            i.structure &&
+            i.structure.structureType === STRUCTURE_WALL
+          ) {
+            wallObject = i.structure;
             break;
           }
         }
@@ -269,6 +273,7 @@ function clearRoom(creep) {
       if (wallObject) {
         flag = actions.attack(creep, wallObject, 'raid');
       } else {
+
         // attack things!
 
         // 1. find towers
