@@ -74,6 +74,11 @@ module.exports = {
         min: 0,
         priority: 1.875
       },
+      thief: {
+        class: 'thief',
+        min: 0,
+        priority: 30
+      },
       upgrader: {
         class: 'upgrader',
         min: 3,

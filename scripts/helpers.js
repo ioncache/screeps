@@ -41,6 +41,8 @@ function getRandomInt(min, max) {
 function getTarget(creep, type, opts = {}) {
   let target = null;
 
+  let targetRoom = opts.room || creep.memory.homeRoom;
+
   switch (type) {
     case 'buildable':
       let buildables = Game.rooms[creep.memory.homeRoom].find(FIND_MY_CONSTRUCTION_SITES, {
@@ -110,11 +112,11 @@ function getTarget(creep, type, opts = {}) {
       break;
 
     case 'droppedEnergy':
-      let droppedEnergy = Game.rooms[creep.memory.homeRoom].find(
+      let droppedEnergy = Game.rooms[targetRoom].find(
         FIND_DROPPED_ENERGY,
         {
           filter: (i) => {
-            return i.room.name === creep.memory.homeRoom;
+            return i.room.name === targetRoom;
           }
         }
       );

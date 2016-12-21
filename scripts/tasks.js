@@ -321,7 +321,9 @@ function clearRoom(creep) {
             }
           } else {
             // 5. destroy spawns
-            let spawns = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_SPAWN });
+            let spawns = creep.room.find(FIND_HOSTILE_STRUCTURES, {
+              filter: (s) => s.structureType === STRUCTURE_SPAWN
+            });
 
             if (spawns.length > 0) {
               flag = actions.attack(creep, spawns[0], 'raid');
@@ -789,13 +791,13 @@ function patrol(creep) {
 
 // TODO: make a dropped item queue, so that multiple creeps don't always swarm
 //       towards the same dropped item
-function pickup(creep) {
+function pickup(creep, targetObject) {
   let flag = true;
 
   if (creep.carry.energy < creep.carryCapacity) {
     // always get a new target, if for some reason there is other
     // droppedEnergy closer, might as well get that instead of original
-    let target = helpers.getTarget(creep, 'droppedEnergy');
+    let target = targetObject || helpers.getTarget(creep, 'droppedEnergy');
 
     // if there is no target at this point, no valid target was found
     if (!target) {
@@ -1148,6 +1150,65 @@ function staticHarvest(creep) {
       }
     } else {
       log.info(`staticHarvest: no static harvest locations available`);
+      flag = false;
+    }
+  }
+
+  return flag;
+}
+
+function steal(creep) {
+  let flag;
+
+  if (_.sum(creep.carry) >= creep.carryCapacity) {
+    flag = false;
+  } else {
+    let thieveryTarget =  Game.flags[creep.memory.thieveryTarget];
+
+    if (
+      thieveryTarget &&
+      thieveryTarget.room &&
+      thieveryTarget.room.name === creep.room.name
+    ) {
+      // pickup any resources on the ground first since they expire
+      let targetObject = helpers.getTarget(creep, 'droppedEnergy', { room: creep.room.name });
+
+      if (targetObject) {
+        flag = pickup(creep, targetObject);
+      } else {
+        // steal any resources from resource holders
+        let containers = creep.room.find(
+          FIND_STRUCTURES,
+          {
+            filter: (store) => {
+              return (
+                store.structureType === STRUCTURE_CONTAINER &&
+                _.sum(store.store) > 0
+              );
+            }
+          }
+        );
+
+        if (containers.length > 0) {
+          containers.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
+
+          for (let i in containers[0].store) {
+            if (containers[0].hasOwnProperty(i)) {
+              flag = actions.withdraw(creep, containers[0], 'steal', i);
+              if (flag) {
+                break;
+              }
+            } else {
+              flag = false;
+            }
+          }
+        } else {
+          flag = false;
+        }
+      }
+    } else if (thieveryTarget) {
+      flag = actions.moveTo(creep, thieveryTarget, 'steal');
+    } else { // do nothing if there is no current thievery target set
       flag = false;
     }
   }
@@ -1578,6 +1639,7 @@ module.exports = {
   remoteHarvest: remoteHarvest,
   renew: renew,
   staticHarvest: staticHarvest,
+  steal: steal,
   transfer: transfer,
   transferMasterStorage: transferMasterStorage,
   transferResources: transferResources,

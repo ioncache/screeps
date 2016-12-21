@@ -20,6 +20,7 @@ let classes = {
   remoteHarvester: require('class.creep.remoteHarvester'),
   supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),
+  thief: require('class.creep.thief'),
   upgrader: require('class.creep.upgrader')
 };
 
