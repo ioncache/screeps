@@ -283,11 +283,11 @@ function clearRoom(creep) {
         // attack things!
 
         // 1. find towers
-        let towers = [];
+        let towers = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_TOWER });
 
         if (towers.length > 0) {
-          // TODO
-
+          towers.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
+          flag = actions.attack(creep, towers[0], 'raid');
         } else {
           let allHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS);
 
