@@ -152,8 +152,8 @@ function claim(creep) {
     if (creep.pos.getRangeTo(Game.flags[target]) > 0) {
       flag = actions.moveTo(creep, Game.flags[target], 'claim');
     } else {
-      creep.reserveController(Game.rooms[creep.memory.homeRoom].controller);
-      if (Game.rooms[creep.memory.homeRoom].controller.owner === 'ioncache') {
+      creep.reserveController(creep.room.controller);
+      if (creep.room.controller.owner.username === config.masterOwner) {
         log.info(`claim: I already own the controller in this room`);
         Game.flags[creep.memory.target].remove();
         creep.memory.target = null;
@@ -161,7 +161,7 @@ function claim(creep) {
         flag = false;
       } else if (Object.keys(Game.rooms).length < Game.gcl.level) { // TODO: fix, object.keys is wrong
         log.info(`claim: attempting to claim ${creep.memory.target}`);
-        let claimResult = creep.claimController(Game.rooms[creep.memory.homeRoom].controller);
+        let claimResult = creep.claimController(creep.room.controller);
         switch (claimResult) {
           case ERR_FULL:
             log.info(`claim: already own 3 controllers in novice area, removing target flag ${creep.memory.target}`);
@@ -181,7 +181,7 @@ function claim(creep) {
             flag = false;
             break;
           case ERR_NOT_IN_RANGE:
-            flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'claim');
+            flag = actions.moveTo(creep, creep.room.controller, 'claim');
             break;
           case OK:
             log.info(`claim: controller claimed huzzah`);
@@ -195,11 +195,11 @@ function claim(creep) {
             flag = true;
         }
       } else if (
-        !Game.rooms[creep.memory.homeRoom].controller.reservation ||
-        Game.rooms[creep.memory.homeRoom].controller.owner.username === config.masterOwner
+        !creep.room.controller.reservation ||
+        creep.room.controller.owner.username === config.masterOwner
       ) {
         log.info(`claim: reserving new controller`);
-        let reserveController = creep.reserveController(Game.rooms[creep.memory.homeRoom].controller);
+        let reserveController = creep.reserveController(creep.room.controller);
         flag = true;
       } else {
         log.info(`claim: current gcl not high enough to claim new room`);
