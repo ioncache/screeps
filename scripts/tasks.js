@@ -278,13 +278,13 @@ function clearRoom(creep) {
         // 1. find towers
         let towers = [];
 
-        if (towers) {
+        if (towers.length > 0) {
           // TODO
 
         } else {
           let allHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS);
 
-          if (allHostileCreeps) {
+          if (allHostileCreeps.length > 0) {
             let atackParts = [
               ATTACK,
               RANGED_ATTACK
@@ -292,30 +292,29 @@ function clearRoom(creep) {
             // 2. find creeps with attack
             let attackCreeps = allHostileCreeps.filter((c) => c.body.some((p) => atackParts.includes(p.type)));
 
-            if (attackCreeps) {
-              attackCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+            if (attackCreeps.length > 0) {
+              attackCreeps.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
               flag = actions.attack(creep, attackCreeps[0], 'raid');
             } else {
               // 3. find creeps with heal
               let healCreeps = allHostileCreeps.filter((c) => c.body.includes(HEAL));
 
-              if (healCreeps) {
-                healCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+              if (healCreeps.length > 0) {
+                healCreeps.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
                 flag = actions.attack(creep, healCreeps[0], 'raid');
               } else {
                 // 4. find other creeps
-                allHostileCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+                allHostileCreeps.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
                 flag = actions.attack(creep, allHostileCreeps[0], 'raid');
               }
             }
           } else {
-            // 5. attack the controller
+            // 5. move near controller
             if (
               creep.room.controller &&
-              creep.room.controller.owner &&
-              creep.room.controller.owner.username !== config.masterOwner
+              creep.pos.getRangeTo(creep.room.controller) > 2
             ) {
-              flag = actions.attack(creep, creep.room.controller, 'attackController');
+              flag = actions.moveTo(creep, creep.room.controller, 'raid');
             }
           }
         }
