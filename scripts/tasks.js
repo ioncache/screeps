@@ -215,6 +215,100 @@ function claim(creep) {
   return flag;
 }
 
+function clearRoom(creep) {
+  let flag;
+
+  // run away to home room to heal if needed
+  if (
+    creep.hits < creep.hitsMax &&
+    !creep.body.includes(ATTACK)
+  ) {
+    flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'raid');
+  } else {
+    // TODO: determine raid targets automatically
+    // inital target selection:
+    // 1. make a flag, eg, 'RaidTarget_01'
+    // 2. save target to creep memory, eg, Game.creeps[creepName].memory.raidTarget = 'RaidTarget_01';
+    let raidTarget = Game.flags[creep.memory.raidTarget];
+
+    // determine if creep is in raid target room or not
+    if (
+      raidTarget.room &&
+      raidTarget.room.name === creep.room.name
+    ) {
+      let wallTarget;
+
+      if (creep.memory.wallTarget !== 'none') {
+        wallTarget = Game.flags[creep.memory.wallTarget];
+
+        if (!wallTarget) {
+          wallTarget = creep.pos.findClosestByRange(FIND_FLAGS, {
+            filter: (f) => /^WallTarget/.test(f.name)
+          });
+        }
+
+        if (!wallTarget) {
+          creep.memory.wallTarget = 'none';
+        }
+      }
+
+      let wallObject;
+      if (wallTarget) {
+        let look = wallTarget.pos.look();
+
+        for (let i of look) {
+          if (i.type === STRUCTURE_WALL) {
+            wallObject = i;
+            break;
+          }
+        }
+      }
+
+      // TODO: maybe not go back and destroy wall object if it's already
+      //       been destroyed and rebuilt
+      if (wallObject) {
+        flag = actions.attack(creep, wallObject, 'raid');
+      } else {
+        // attack things!
+
+        // 1. find towers
+
+        let allHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS);
+
+        // 2. find creeps with attack
+        let atackParts = [
+          ATTACK,
+          RANGED_ATTACK
+        ];
+        let attackCreeps = allHostileCreeps.filter((c) => c.body.some((p) => atackParts.includes(p.type)));
+
+        if (attackCreeps) {
+          attackCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+          flag = actions.attack(creep, attackCreeps[0], 'raid');
+        } else {
+          // 3. find creeps with heal
+          let healCreeps = allHostileCreeps.filter((c) => c.body.includes(HEAL));
+
+          if (healCreeps) {
+            healCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+            flag = actions.attack(creep, healCreeps[0], 'raid');
+          } else {
+            // 4. find other creeps
+            allHostileCreeps.sort((a, b) => creep.pos.getRangeTo(b) - creep.pos.getRangeTo(a));
+            flag = actions.attack(creep, allHostileCreeps[0], 'raid');
+          }
+        }
+      }
+    } else if (raidTarget) {
+      flag = actions.moveTo(creep, raidTarget, 'raid');
+    } else { // do nothing if there is no current raid target set
+      flag = false;
+    }
+  }
+
+  return flag;
+}
+
 function fillupMasterStorage(creep) {
   return fillup(creep, true, 'fillupMasterStorage');
 }
@@ -1428,6 +1522,7 @@ function withdraw(creep, withdrawTarget) {
 module.exports = {
   build: build,
   claim: claim,
+  clearRoom: clearRoom,
   fillup: fillup,
   fillupMasterStorage: fillupMasterStorage,
   fix: fix,

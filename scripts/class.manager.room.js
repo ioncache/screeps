@@ -16,6 +16,7 @@ let classes = {
   longHauler: require('class.creep.longHauler'),
   miner: require('class.creep.miner'),
   pioneer: require('class.creep.pioneer'),
+  raider: require('class.creep.raider'),
   remoteHarvester: require('class.creep.remoteHarvester'),
   supplier: require('class.creep.supplier'),
   staticHarvester: require('class.creep.staticHarvester'),

@@ -54,6 +54,11 @@ module.exports = {
         min: 0,
         priority: 50
       },
+      raider: {
+        class: 'raider',
+        min: 0,
+        priority: 30
+      },
       remoteHarvester: {
         class: 'remoteHarvester',
         min: 0,

@@ -4,6 +4,42 @@ let helpers = require('helpers');
 let log = require('logger');
 let strings = require('strings');
 
+function attack(creep, target, task, attackType = 'attack') {
+  let flag;
+
+  let result = creep[attackType](target);
+
+  switch (result) {
+    case ERR_INVALID_TARGET:
+      // for some reason current target is no longer valid
+      // reset target for next tick, but keep task as task should still be valid
+      log.info(`${task}: attack target no longer valid`);
+      flag = false;
+      break;
+
+    case ERR_NO_BODYPART:
+      log.info(`${task}: don't be silly, this creep has no body parts for '${attackType}'`);
+      flag = false;
+      break;
+
+    case ERR_NOT_IN_RANGE:
+      log.info(`${task}: target not in range`);
+      flag = moveTo(creep, target, task);
+      break;
+
+    case OK:
+      log.info(`${task}: attacking`);
+      flag = true;
+      break;
+
+    default:
+      log.info(`${task}: unknown response during attack'${result}'`);
+      flag = true;
+  }
+
+  return flag;
+}
+
 function harvest(creep, target, task) {
   let flag;
 
@@ -183,6 +219,7 @@ function withdraw(creep, target, task, type = RESOURCE_ENERGY, initialTargetOnly
 }
 
 module.exports = {
+  attack: attack,
   harvest: harvest,
   moveTo: moveTo,
   transfer: transfer,
