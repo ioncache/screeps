@@ -8,9 +8,9 @@ class CreepRaider extends CreepBase {
     role = 'raider',
     parts = [
       TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE
+      MOVE, MOVE, MOVE
     ]
   ) {
     super(role, parts);
