@@ -551,11 +551,20 @@ function guard(creep) {
       if (creep.pos.getRangeTo(Game.flags[post]) > 0) {
         flag = actions.moveTo(creep, Game.flags[post], 'guard');
       } else {
-        log.info(`guard: guarding ${post}`);
-        if (helpers.getRandomInt(1, 100) > 90) {
-          creep.say(strings.guardChat[helpers.getRandomInt(0, strings.guardChat.length - 1)], true);
+        let closeHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS, {
+          filter: (c) => creep.pos.getRangeTo(c) <= 3
+        });
+
+        if (closeHostileCreeps.length > 0) {
+          log.info(`guard: defending against ${closeHostileCreeps[0]}`);
+          flag = actions.rangedAttack(creep, closeHostileCreeps[0], 'guard');
+        } else {
+          log.info(`guard: guarding ${post}`);
+          if (helpers.getRandomInt(1, 100) > 90) {
+            creep.say(strings.guardChat[helpers.getRandomInt(0, strings.guardChat.length - 1)], true);
+          }
+          flag = true;
         }
-        flag = true;
       }
     } else {
       creep.memory.task = null;
