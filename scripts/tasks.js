@@ -248,41 +248,41 @@ function clearRoom(creep) {
       raidTarget.room &&
       raidTarget.room.name === creep.room.name
     ) {
-      let obstructionTarget;
+      let destroyTarget;
 
-      if (creep.memory.obstructionTarget !== 'none') {
-        obstructionTarget = Game.flags[creep.memory.obstructionTarget];
+      if (creep.memory.destroyTarget !== 'none') {
+        destroyTarget = Game.flags[creep.memory.destroyTarget];
 
-        if (!obstructionTarget) {
-          obstructionTarget = creep.pos.findClosestByRange(FIND_FLAGS, {
-            filter: (f) => /^obstructionTarget/.test(f.name)
+        if (!destroyTarget) {
+          destroyTarget = creep.pos.findClosestByRange(FIND_FLAGS, {
+            filter: (f) => /^DestroyTarget/.test(f.name)
           });
         }
 
-        if (!obstructionTarget) {
-          creep.memory.obstructionTarget = 'none';
+        if (!destroyTarget) {
+          creep.memory.destroyTarget = 'none';
         }
       }
 
-      let obstructionObject;
-      if (obstructionTarget) {
-        let look = obstructionTarget.pos.look();
+      let destroyObject;
+      if (destroyTarget) {
+        let look = destroyTarget.pos.look();
 
         for (let i of look) {
           if (
             i.structure &&
             [STRUCTURE_RAMPART, STRUCTURE_WALL].includes(i.structure.structureType)
           ) {
-            obstructionObject = i.structure;
+            destroyObject = i.structure;
             break;
           }
         }
       }
 
-      // TODO: maybe not go back and destroy obstruction object if it's already
+      // TODO: maybe not go back and destroy object if it's already
       //       been destroyed and rebuilt
-      if (obstructionObject) {
-        flag = actions.attack(creep, obstructionObject, 'raid');
+      if (destroyObject) {
+        flag = actions.attack(creep, destroyObject, 'raid');
       } else {
         // attack things!
 
