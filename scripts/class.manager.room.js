@@ -222,6 +222,7 @@ class RoomManager {
     }
 
     let possibleHostileTargets = [];
+    let didExtraRepair = false;
 
     // TODO: determine targets by range, to get more out of tower spend
     //       Attack effectiveness	600 hits at range ≤5 to 150 hits at range ≥20
@@ -321,11 +322,17 @@ class RoomManager {
                 return difference;
               });
               tower.repair(belowMaxStructure);
-              this.room.memory.lastRepairTimestamp = currentTimestamp;
+              didExtraRepair = true;
             }
           }
         }
       }
+    }
+
+    // only set lastRepairTimestamp after all towers have been processed
+    // that way each can do the more than minHit repair in a turn
+    if (didExtraRepair) {
+      this.room.memory.lastRepairTimestamp = currentTimestamp;
     }
 
     if (possibleHostileTargets.length > 0) {
