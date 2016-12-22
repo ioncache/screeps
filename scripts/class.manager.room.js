@@ -198,14 +198,14 @@ class RoomManager {
       filter: (c) => c.body.some((p) => dangerousParts.includes(p.type))
     });
 
-    // notify by email once every 5 minutes, but do it immediately
     let currentDate = new Date();
     let currentTimestamp = currentDate.getTime();
+
     if (
       allHostileCreeps.length > 0 &&
       (
         !this.room.memory.lastHostileTimestamp ||
-        (this.room.memory.lastHostileTimestamp + 600000) < currentTimestamp
+        currentTimestamp - this.room.memory.lastHostileTimestamp > config.roomHostileNotifyTimeout
       )
     ) {
       let message = `Room ${this.room.name} is getting attacked by ${allHostileCreeps.length} `;
@@ -268,8 +268,16 @@ class RoomManager {
             FIND_STRUCTURES,
             {
               filter: (s) => {
-                if (config.maxHits[s.structureType]) {
-                  return s.hits < config.maxHits[s.structureType](tower.room);
+                if (config.minHits[s.structureType]) {
+                  // for walls and ramparts, get to a minimum level of hits
+                  // then start upgrading slowly over time until max hits is reached
+                  return (
+                    s.hits < config.minHits[s.structureType](tower.room) ||
+                    (
+                      s.hits < s.hitsMax &&
+                      currentTimestamp - this.room.memory.lastRepairTimestamp >= config.roomLastRepairTimeout
+                    )
+                  );
                 } else {
                   return (s.hitsMax - s.hits) >= helpers.calculateTowerEffectiveness('repair', tower.pos.getRangeTo(s));
                 }
@@ -278,12 +286,22 @@ class RoomManager {
           );
 
           // repair farthest first as unoccupied builders can fix local things
+          // NOTE: builders no longer fix when there are towers, so may want to change this
           allDamagedStructures.sort((a, b) => {
             return tower.pos.getRangeTo(b) - tower.pos.getRangeTo(a);
           });
 
           if (allDamagedStructures.length > 0) {
-            tower.repair(allDamagedStructures[0]);
+            let repairTarget = allDamagedStructures[0];
+            tower.repair(repairTarget);
+            // when repairing a rampart or wall beyond the minHits
+            // set a timestamp to indicate the next time to allow this in this room
+            if (
+              config.minHits[repairTarget.structureType] &&
+              repairTarget.hits >= config.minHits[repairTarget.structureType](tower.room)
+            ) {
+              this.room.memory.lastRepairTimestamp = currentTimestamp;
+            }
           }
         }
       }

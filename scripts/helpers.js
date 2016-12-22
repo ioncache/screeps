@@ -16,6 +16,9 @@ function calculateCreepCost(parts) {
   return cost;
 }
 
+// Attack effectiveness	600 hits at range ≤5 to 150 hits at range ≥20
+// Heal effectiveness	400 hits at range ≤5 to 100 hits at range ≥20
+// Repair effectiveness	800 hits at range ≤5 to 200 hits at range ≥20
 function calculateTowerEffectiveness(action, range) {
   let actions = {
     attack: {
@@ -259,11 +262,11 @@ function getTarget(creep, type, opts = {}) {
         FIND_STRUCTURES,
         {
           filter: (structure) => {
-            let maxHits = opts.maxHits || {};
-            if (maxHits[structure.structureType]) {
+            let minHits = opts.minHits || {};
+            if (minHits[structure.structureType]) {
               return (
                 structure.room.name === creep.memory.homeRoom &&
-                structure.hits < maxHits[structure.structureType](creep.room)
+                structure.hits < minHits[structure.structureType](creep.room)
               );
             } else {
               return (

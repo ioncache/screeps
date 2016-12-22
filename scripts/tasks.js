@@ -485,8 +485,8 @@ function fix(creep) {
         let tempTarget = Game.getObjectById(target);
 
         if (
-          (config.maxHits[tempTarget.structureType] &&
-          tempTarget.hits > config.maxHits[tempTarget.structureType](creep.room)) ||
+          (config.minHits[tempTarget.structureType] &&
+          tempTarget.hits > config.minHits[tempTarget.structureType](creep.room)) ||
           tempTarget.hits >= tempTarget.hitsMax
         ) {
           log.info('fix: resetting target as it does not need fixing');
@@ -496,7 +496,7 @@ function fix(creep) {
     }
 
     if (!target) {
-      target = helpers.getTarget(creep, 'fixable', { maxHits: config.maxHits });
+      target = helpers.getTarget(creep, 'fixable', { minHits: config.minHits });
     }
 
     // if there is no target at this point, no valid target was found
@@ -537,8 +537,8 @@ function fix(creep) {
             creep.memory.target = null;
             creep.memory.task = null;
           } else if ( // if stucture is at max desired health, remove target
-            config.maxHits[target.structureType] &&
-            target.hits > config.maxHits[target.structureType](creep.room)
+            config.minHits[target.structureType] &&
+            target.hits > config.minHits[target.structureType](creep.room)
           ) {
             creep.memory.target = null;
             creep.memory.task = null;
@@ -877,10 +877,10 @@ function moveTo(creep) {
   return flag;
 }
 
-function parking(creep) {
+function parking(creep, moveOnly = false) {
   let flag;
 
-  let parking =  creep.pos.findClosestByRange(FIND_FLAGS, {
+  let parking = creep.pos.findClosestByRange(FIND_FLAGS, {
     filter: (flag) => {
       return (
         flag.room.name === creep.memory.homeRoom &&
@@ -894,14 +894,18 @@ function parking(creep) {
     creep.pos.getRangeTo(parking) > 2
   ) {
     actions.moveTo(creep, parking, 'parking');
-    creep.memory.task = 'parking';
-    creep.memory.parkingMeter = 10; // ticks to go park for
+    if (!moveOnly) {
+      creep.memory.task = 'parking';
+      creep.memory.parkingMeter = 10; // ticks to go park for
+    }
     flag = true;
   } else {
-    creep.memory.parkingMeter -= 1;
-    if (!creep.memory.parkingMeter) {
-      creep.memory.task = null;
-      flag = false;
+    if (!moveOnly) {
+      creep.memory.parkingMeter -= 1;
+      if (!creep.memory.parkingMeter) {
+        creep.memory.task = null;
+        flag = false;
+      }
     }
   }
 
@@ -1203,8 +1207,7 @@ function staticHarvest(creep) {
               i.room.name === creep.memory.homeRoom &&
               [STRUCTURE_CONTAINER].includes(i.structureType)
             );
-          },
-          nearest: true
+          }
         }
       );
     }
@@ -1245,7 +1248,7 @@ function staticHarvest(creep) {
       creep.memory.link = link;
       let linkTarget = Game.getObjectById(link);
 
-      if (staticTarget && !creep.pos.isNearTo(staticTarget)) {
+      if (staticTarget && creep.pos.getRangeTo(staticTarget) > 0) {
         flag = actions.moveTo(creep, staticTarget, 'staticHarvest');
       } else if (!creep.pos.isNearTo(sourceTarget)) {
         flag = actions.moveTo(creep, sourceTarget, 'staticHarvest');

@@ -169,6 +169,8 @@ module.exports = {
       }
     }
   },
+  roomHostileNotifyTimeout: 300000,
+  roomLastRepairTimeout: 120000,
   masterSpawn: 'Spawn1',
   masterOwner: 'ioncache',
   // maxHits: {
@@ -178,8 +180,8 @@ module.exports = {
   //   rampart: function(room) {
   //     return Math.pow(1000, 1 + room.controller.level / 10);
   //   }
-  // }
-  maxHits: {
+  // },
+  minHits: {
     constructedWall: function(room) {
       return room.controller.level * 2500;
     },

@@ -31,8 +31,9 @@ class CreepBase {
 
     // continue with other tasks if original task allows
     if (!result) {
+      let result;
       for (let task of this.tasks) {
-        let result;
+        result =  false;
         if (tasks[task]) {
           result = tasks[task](creep);
         } else {
@@ -46,6 +47,12 @@ class CreepBase {
           break;
         }
       }
+
+      // if at this point nothing has been done, move somewhere so creep
+      // isn't left stadning around blocking other things
+      // if (!result && !creep.memory.task) {
+      //   tasks.parking(creep, true);
+      // }
     }
   }
 }
