@@ -472,7 +472,11 @@ function fillup(creep, waitUntilFull = false, task) {
 function fix(creep) {
   let flag = true;
 
-  if (creep.carry.energy === 0) {
+  if (
+    creep.carry.energy === 0 ||
+    // don't do fix task if there are towers, they do it better
+    creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_TOWER }).length > 0
+  ) {
     creep.memory.target = null;
     creep.memory.task = null;
     flag = false;
