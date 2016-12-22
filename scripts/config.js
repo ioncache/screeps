@@ -188,5 +188,14 @@ module.exports = {
     rampart: function(room) {
       return room.controller.level * 2500;
     }
+  },
+  rampartToWallHitScale: {
+    2: 1000,
+    3: 300,
+    4: 100,
+    5: 30,
+    6: 10,
+    7: 3,
+    8: 1
   }
 };

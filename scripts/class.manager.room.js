@@ -33,7 +33,10 @@ class RoomManager {
     this.roomName = roomName;
     this.room = Game.rooms[this.roomName];
 
-    if (!this.room.memory.lastRepairTimestamp) {
+    if (
+      this.room.memory &&
+      !this.room.memory.lastRepairTimestamp
+    ) {
       this.room.memory.lastRepairTimestamp = 1;
     }
 
@@ -273,15 +276,7 @@ class RoomManager {
             {
               filter: (s) => {
                 if (config.minHits[s.structureType]) {
-                  // for walls and ramparts, get to a minimum level of hits
-                  // then start upgrading slowly over time until max hits is reached
-                  return (
-                    s.hits < config.minHits[s.structureType](tower.room) ||
-                    (
-                      s.hits < s.hitsMax &&
-                      currentTimestamp - this.room.memory.lastRepairTimestamp >= config.roomLastRepairTimeout
-                    )
-                  );
+                  return s.hits < config.minHits[s.structureType](tower.room);
                 } else {
                   return (s.hitsMax - s.hits) >= helpers.calculateTowerEffectiveness('repair', tower.pos.getRangeTo(s));
                 }
@@ -298,12 +293,34 @@ class RoomManager {
           if (allDamagedStructures.length > 0) {
             let repairTarget = allDamagedStructures[0];
             tower.repair(repairTarget);
-            // when repairing a rampart or wall beyond the minHits
-            // set a timestamp to indicate the next time to allow this in this room
-            if (
-              config.minHits[repairTarget.structureType] &&
-              repairTarget.hits >= config.minHits[repairTarget.structureType](tower.room)
-            ) {
+          } else if (
+            currentTimestamp - this.room.memory.lastRepairTimestamp >= config.roomLastRepairTimeout
+          ) {
+            let belowMaxStructures = tower.room.find(FIND_STRUCTURES,{
+              filter: (s) => {
+                // only do extra repairs on structures that have a min hit setting
+                return (
+                  config.minHits[s.structureType] &&
+                  s.hits < s.hitsMax
+                );
+              }
+            });
+
+            if (belowMaxStructures.length > 0) {
+              let belowMaxStructure = _.minBy(belowMaxStructures, (s) =>{
+                let difference = s.hitsMax - s.hits;
+
+                // walls have 300m hitsMax
+                // ramparts scale by room controller level
+                // to ensure even distribution of repairs beyond the minHit value
+                // scale the different in hitsMax to hits for ramparts by a scaling constant
+                if (s.structureType === STRUCTURE_RAMPART) {
+                  difference *= config.rampartToWallHitScale[this.room.controller.level];
+                }
+
+                return difference;
+              });
+              tower.repair(belowMaxStructure);
               this.room.memory.lastRepairTimestamp = currentTimestamp;
             }
           }
