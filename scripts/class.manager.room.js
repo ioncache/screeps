@@ -308,7 +308,7 @@ class RoomManager {
             });
 
             if (belowMaxStructures.length > 0) {
-              let belowMaxStructure = _.min(belowMaxStructures, (s) =>{
+              let belowMaxStructure = _.max(belowMaxStructures, (s) => {
                 let difference = s.hitsMax - s.hits;
 
                 // walls have 300m hitsMax
