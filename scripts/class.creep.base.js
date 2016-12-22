@@ -49,7 +49,7 @@ class CreepBase {
       }
 
       // if at this point nothing has been done, move somewhere so creep
-      // isn't left stadning around blocking other things
+      // isn't left standing around blocking other things
       // if (!result && !creep.memory.task) {
       //   tasks.parking(creep, true);
       // }

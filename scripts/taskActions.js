@@ -92,6 +92,8 @@ function harvest(creep, target, task) {
   return flag;
 }
 
+// TODO: maybe always return false from moveTo as it appears that a moveTo
+//       can be done on a turn in any combination of other tasks
 function moveTo(creep, target, task, opts = {}) {
   let flag;
 
