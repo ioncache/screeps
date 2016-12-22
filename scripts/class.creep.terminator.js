@@ -3,16 +3,17 @@
 let CreepBase = require('class.creep.base');
 let log = require('logger');
 
-class CreepKeeperHunter extends CreepBase {
+class CreepTerminator extends CreepBase {
   constructor(
-    role = 'keeperHunter',
+    role = 'terminator',
     parts = [
       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL
+      ATTACK, ATTACK, ATTACK, ATTACK,
+      HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
+      HEAL
     ]
   ) {
     super(role, parts);
@@ -27,12 +28,12 @@ class CreepKeeperHunter extends CreepBase {
   activate() {
     let creep = Game.creeps[this.name];
 
-    log.start(creep.name, `my prey cannot hide`);
+    log.start(creep.name, `come with me if you want to live`);
 
     super.activate();
 
-    log.finish(`from the shadows I shall strike`);
+    log.finish(`I'll be back`);
   }
 }
 
-module.exports = CreepKeeperHunter;
+module.exports = CreepTerminator;

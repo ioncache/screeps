@@ -23,6 +23,11 @@ module.exports = {
         min: 0,
         priority: 1.75
       },
+      decoy: {
+        class: 'decoy',
+        min: 0,
+        priority: 33
+      },
       energizer: {
         class: 'energizer',
         min: 0,

@@ -7,9 +7,11 @@ class CreepRemoteTeamHarvester extends CreepBase {
   constructor(
     role = 'remoteTeamHarvester',
     parts = [
-      WORK, WORK, WORK,
-      CARRY,
-      MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
+      WORK, WORK, WORK, WORK, WORK, WORK, WORK,
+      CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+      CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+      CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+      MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
     ]
   ) {
     super(role, parts);
@@ -25,7 +27,7 @@ class CreepRemoteTeamHarvester extends CreepBase {
 
     super.activate();
 
-    log.finish(`I"m off to harvest the rest of my days`);
+    log.finish(`I'm off to harvest the rest of my days`);
   }
 }
 

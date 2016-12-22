@@ -9,6 +9,7 @@ let classes = {
   builder: require('class.creep.builder'),
   carter: require('class.creep.carter'),
   courier: require('class.creep.courier'),
+  decoy: require('class.creep.decoy'),
   energizer: require('class.creep.energizer'),
   fixer: require('class.creep.fixer'),
   guard: require('class.creep.guard'),
@@ -215,14 +216,15 @@ class RoomManager {
 
     let possibleHostileTargets = [];
 
-    // TODO: find potential targets for each tower,
-    //       determine which target is most dangerous / closest / ???
-    //       then ensure all towers fire at the same target
+    // TODO: determine targets by range, to get mose out of attackBodyParts
+    //       Attack effectiveness	600 hits at range ≤5 to 150 hits at range ≥20
+    //       Heal effectiveness	400 hits at range ≤5 to 100 hits at range ≥20
+    //       Repair effectiveness	800 hits at range ≤5 to 200 hits at range ≥20
     for (let tower of towers) {
       // only target hostile creeps within a certain range of a tower
       // to make tower damage more efficient
       let hostileCreeps = allHostileCreeps.filter((c) => {
-        return tower.pos.getRangeTo(c) <= 18;
+        return tower.pos.getRangeTo(c) <= 15;
       });
 
       if (hostileCreeps.length > 0) {

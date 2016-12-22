@@ -225,6 +225,17 @@ function claim(creep) {
 function clearRoom(creep) {
   let flag;
 
+  let healBodyParts = creep.body.filter((p) => {
+    return p.type === HEAL && p.hits > 0;
+  });
+
+  if (
+    creep.hits < creep.hitsMax &&
+    healBodyParts.length > 0
+  ) {
+    creep.heal(creep);
+  }
+
   let attackBodyParts = creep.body.filter((p) => {
     return [ATTACK, RANGED_ATTACK].includes(p.type) && p.hits > 0;
   });
@@ -341,6 +352,58 @@ function clearRoom(creep) {
       }
     } else if (raidTarget) {
       flag = actions.moveTo(creep, raidTarget, 'raid');
+    } else { // do nothing if there is no current raid target set
+      flag = false;
+    }
+  }
+
+  return flag;
+}
+
+function decoy(creep) {
+  let flag;
+
+  let hasHealed = false;
+
+  let healBodyParts = creep.body.filter((p) => {
+    return p.type === HEAL && p.hits > 0;
+  });
+
+  let moveBodyParts = creep.body.filter((p) => {
+    return p.type === MOVE && p.hits > 0;
+  });
+
+  if (
+    creep.hits < creep.hitsMax &&
+    healBodyParts.length > 0
+  ) {
+    creep.heal(creep);
+    hasHealed = true;
+  }
+
+  // run away to home room to heal if needed
+  if (
+    creep.hits < creep.hitsMax &&
+    moveBodyParts.lentgh <= 2
+  ) {
+    flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'decoy');
+  } else {
+    let decoyTarget = Game.flags[creep.memory.decoyTarget];
+
+    // determine if creep is in raid target room or not
+    if (
+      decoyTarget &&
+      decoyTarget.room &&
+      decoyTarget.room.name === creep.room.name
+    ) {
+      // TODO:
+      // 1. heal any friendly creeps in range if needed
+      // 2. follow friendly troops around
+
+      // for now just hang out and sbsorb hits
+      flag = true;
+    } else if (decoyTarget) {
+      flag = actions.moveTo(creep, decoyTarget, 'decoy');
     } else { // do nothing if there is no current raid target set
       flag = false;
     }
@@ -631,34 +694,63 @@ function harvest(creep) {
 function hunt(creep) {
   let flag;
 
-  if (creep.hits < creep.hitsMax) {
+  let healBodyParts = creep.body.filter((p) => {
+    return p.type === HEAL && p.hits > 0;
+  });
+
+  if (
+    creep.hits < creep.hitsMax &&
+    healBodyParts.length > 0 &&
+    !creep.memory.isEngaged
+  ) {
     creep.heal(creep);
   }
 
-  let keeperTarget = Game.flags[creep.memory.keeperTarget];
+  let attackBodyParts = creep.body.filter((p) => {
+    return p.type === ATTACK && p.hits > 0;
+  });
 
-  if (
-    keeperTarget &&
-    keeperTarget.room &&
-    keeperTarget.room.name === creep.room.name
-  ) {
-    let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
-      filter: (c) => c.room.name === creep.room.name
-    });
+  // run away to home room to heal if needed
+  if (attackBodyParts.lentgh === 0) {
+    creep.memory.isEngaged = false;
+    flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'raid');
+  } else {
+    let keeperTarget = Game.flags[creep.memory.keeperTarget];
 
-    if (target) {
-      flag = actions.attack(creep, target, 'hunt');
-    } else {
-      let lairs = creep.room.find(FIND_STRUCTURES, {
-        filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+    if (
+      keeperTarget &&
+      keeperTarget.room &&
+      keeperTarget.room.name === creep.room.name
+    ) {
+      let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+        filter: (c) => c.room.name === creep.room.name
       });
-      lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
-      flag = actions.moveTo(creep, lairs[0], 'hunt');
+
+      if (target) {
+        if (creep.pos.getRangeTo(target) > 1) {
+          flag = actions.moveTo(creep, target, 'hunt');
+        } else {
+          // if our next attack will kill the keeperTarget
+          // set isEngaged to false
+          if (target.hits <= attackBodyParts.length * 30) {
+            creep.memory.isEngaged = false;
+          } else {
+            creep.memory.isEngaged = true;
+          }
+          flag = actions.attack(creep, target, 'hunt');
+        }
+      } else {
+        let lairs = creep.room.find(FIND_STRUCTURES, {
+          filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+        });
+        lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
+        flag = actions.moveTo(creep, lairs[0], 'hunt');
+      }
+    } else if (keeperTarget) {
+      flag = actions.moveTo(creep, keeperTarget, 'hunt');
+    } else { // do nothing if there is no current keeper target set
+      flag = false;
     }
-  } else if (keeperTarget) {
-    flag = actions.moveTo(creep, keeperTarget, 'hunt');
-  } else { // do nothing if there is no current keeper target set
-    flag = false;
   }
 
   return flag;
@@ -1668,6 +1760,7 @@ module.exports = {
   build: build,
   claim: claim,
   clearRoom: clearRoom,
+  decoy: decoy,
   fillup: fillup,
   fillupMasterStorage: fillupMasterStorage,
   fix: fix,
