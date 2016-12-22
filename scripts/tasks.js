@@ -683,7 +683,7 @@ function harvest(creep) {
     if (creep.memory.nearSource) {
       let source = Game.getObjectById(creep.memory.nearSource);
       if (creep.pos.getRangeTo(source) < 2) {
-        helpers.moveAwayFromSource(creep, creep.memory.nearSource);
+        helpers.moveTowardsParking(creep);
       } else {
         creep.memory.nearSource = null;
       }
@@ -1149,7 +1149,8 @@ function renew(creep, nextTask, maxTicksToLive = 750) {
           log.info(`renew: all filled up`);
           creep.memory.target = null;
           creep.memory.task = nextTask || null;
-          flag = false;
+          helpers.moveTowardsParking(creep);
+          flag = true;
           break;
         case ERR_NOT_ENOUGH_ENERGY:
           log.info(`renew: spawn out of energy`);
@@ -1173,6 +1174,7 @@ function renew(creep, nextTask, maxTicksToLive = 750) {
           if (creep.ticksToLive >= maxTicksToLive) { // move on to other things
             creep.memory.target = null;
             creep.memory.task = nextTask || null;
+            helpers.moveTowardsParking(creep);
             flag = true;
           }
           flag = true;

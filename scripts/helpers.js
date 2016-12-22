@@ -465,9 +465,7 @@ function getTarget(creep, type, opts = {}) {
   return target;
 }
 
-function moveAwayFromSource(creep, sourceId) {
-  let source = Game.getObjectById(sourceId);
-
+function moveTowardsParking(creep) {
   let parking =  creep.pos.findClosestByRange(FIND_FLAGS, {
     filter: (flag) => {
       return (
@@ -503,5 +501,5 @@ module.exports = {
   generateName: generateName,
   getRandomInt: getRandomInt,
   getTarget: getTarget,
-  moveAwayFromSource: moveAwayFromSource
+  moveTowardsParking: moveTowardsParking
 };
