@@ -7,7 +7,7 @@ class CreepDecoy extends CreepBase {
   constructor(
     role = 'decoy',
     parts = [
-      TOUGH, TOUGH, TOUGH, TOUGH,
+      TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
       MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE,
       HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,

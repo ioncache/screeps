@@ -216,7 +216,7 @@ class RoomManager {
 
     let possibleHostileTargets = [];
 
-    // TODO: determine targets by range, to get mose out of attackBodyParts
+    // TODO: determine targets by range, to get more out of tower spend
     //       Attack effectiveness	600 hits at range ≤5 to 150 hits at range ≥20
     //       Heal effectiveness	400 hits at range ≤5 to 100 hits at range ≥20
     //       Repair effectiveness	800 hits at range ≤5 to 200 hits at range ≥20
@@ -264,25 +264,26 @@ class RoomManager {
         if (woundedCreep) {
           tower.heal(woundedCreep);
         } else if (tower.energy > tower.energyCapacity * 0.75) { // always keep energy for shooting
-          let furthestDamagedStructures = tower.room.find(
+          let allDamagedStructures = tower.room.find(
             FIND_STRUCTURES,
             {
-              filter: (structure) => {
-                if (config.maxHits[structure.structureType]) {
-                  return structure.hits < config.maxHits[structure.structureType](tower.room);
+              filter: (s) => {
+                if (config.maxHits[s.structureType]) {
+                  return s.hits < config.maxHits[s.structureType](tower.room);
                 } else {
-                  return structure.hits < structure.hitsMax;
+                  return (s.hitsMax - s.hits) >= helpers.calculateTowerEffectiveness('repair', tower.pos.getRangeTo(s));
                 }
               }
             }
           );
 
-          furthestDamagedStructures.sort((a, b) => {
+          // repair farthest first as unoccupied builders can fix local things
+          allDamagedStructures.sort((a, b) => {
             return tower.pos.getRangeTo(b) - tower.pos.getRangeTo(a);
           });
 
-          if (furthestDamagedStructures) {
-            tower.repair(furthestDamagedStructures[0]);
+          if (allDamagedStructures.length > 0) {
+            tower.repair(allDamagedStructures[0]);
           }
         }
       }

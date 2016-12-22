@@ -16,6 +16,37 @@ function calculateCreepCost(parts) {
   return cost;
 }
 
+function calculateTowerEffectiveness(action, range) {
+  let actions = {
+    attack: {
+      max: 600,
+      min: 150
+    },
+    heal: {
+      max: 400,
+      min: 100
+    },
+    repair: {
+      max: 800,
+      min: 200
+    }
+  };
+
+  if (!actions[action]) {
+    return -1;
+  } else {
+    let actionValues = actions[action];
+    if (range <= 5) {
+      return actionValues.max;
+    } else if (range >= 20) {
+      return actionValues.min;
+    } else {
+      let step = (actionValues.max - actionValues.min) / 15;
+      return actionValues.max - ((range - 5) * step);
+    }
+  }
+}
+
 function findPositionNearSpawn(creep) {
   let target;
 
@@ -465,6 +496,7 @@ function generateName(role = 'harvester') {
 
 module.exports = {
   calculateCreepCost: calculateCreepCost,
+  calculateTowerEffectiveness: calculateTowerEffectiveness,
   generateName: generateName,
   getRandomInt: getRandomInt,
   getTarget: getTarget,

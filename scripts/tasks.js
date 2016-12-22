@@ -394,7 +394,8 @@ function decoy(creep) {
     if (
       decoyTarget &&
       decoyTarget.room &&
-      decoyTarget.room.name === creep.room.name
+      creep.pos.getRangeTo(decoyTarget) === 0
+      // decoyTarget.room.name === creep.room.name
     ) {
       // TODO:
       // 1. heal any friendly creeps in range if needed
@@ -919,7 +920,19 @@ function patrol(creep) {
 function pickup(creep, targetObject) {
   let flag = true;
 
-  if (creep.carry.energy < creep.carryCapacity) {
+  let atackParts = [
+    ATTACK,
+    RANGED_ATTACK
+  ];
+
+  let dangerousHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS, {
+    filter: (c) => c.body.some((p) => atackParts.includes(p.type))
+  });
+
+  // don't do pickup task if there are attack type creeps around
+  if (dangerousHostileCreeps.length > 0) {
+    flag = false;
+  } else if (creep.carry.energy < creep.carryCapacity) {
     // always get a new target, if for some reason there is other
     // droppedResource closer, might as well get that instead of original
     let target = targetObject || helpers.getTarget(creep, 'droppedResource');
