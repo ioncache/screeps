@@ -33,8 +33,15 @@ class RoomManager {
     this.roomName = roomName;
     this.room = Game.rooms[this.roomName];
 
+    if (!this.room.hasOwnProperty('memory')) {
+      this.room.memory = {};
+    }
+
+    if (!this.room.memory.hasOwnProperty('lastRepairTimestamp')) {
+      this.room.memory.lastRepairTimestamp = 0;
+    }
+
     if (
-      this.room.memory &&
       this.room.memory.roomType &&
       config.creepConfigMaster[this.room.memory.roomType]
     ) {
