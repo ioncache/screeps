@@ -15,7 +15,8 @@ class CreepBuilder extends CreepBase {
       'build',
       'fix',
       'withdrawUpgrade',
-      'getWorkEnergy'
+      'getWorkEnergy',
+      'parking'
     ];
   }
 

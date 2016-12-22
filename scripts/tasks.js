@@ -615,13 +615,13 @@ function guard(creep) {
       if (creep.pos.getRangeTo(Game.flags[post]) > 0) {
         flag = actions.moveTo(creep, Game.flags[post], 'guard');
       } else {
-        let closeHostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS, {
+        let closestHostileCreep = creep.room.findClosestByRange(FIND_HOSTILE_CREEPS, {
           filter: (c) => creep.pos.getRangeTo(c) <= 3
         });
 
-        if (closeHostileCreeps.length > 0) {
-          log.info(`guard: defending against ${closeHostileCreeps[0]}`);
-          flag = actions.rangedAttack(creep, closeHostileCreeps[0], 'guard');
+        if (closestHostileCreep) {
+          log.info(`guard: defending against ${closestHostileCreep}`);
+          flag = actions.rangedAttack(creep, closestHostileCreep, 'guard');
         } else {
           log.info(`guard: guarding ${post}`);
           if (helpers.getRandomInt(1, 100) > 90) {
@@ -903,7 +903,7 @@ function parking(creep, moveOnly = false) {
       creep.memory.parkingMeter = 10; // ticks to go park for
     }
     flag = true;
-  } else {
+  } else if (parking) {
     if (!moveOnly) {
       creep.memory.parkingMeter -= 1;
       if (!creep.memory.parkingMeter) {
@@ -911,6 +911,9 @@ function parking(creep, moveOnly = false) {
         flag = false;
       }
     }
+  } else {
+    creep.memory.task = null;
+    flag = false;
   }
 
   return flag;

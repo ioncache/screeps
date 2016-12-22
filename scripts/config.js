@@ -170,7 +170,7 @@ module.exports = {
     }
   },
   roomHostileNotifyTimeout: 300000,
-  roomLastRepairTimeout: 60000,
+  roomLastRepairTimeout: 120000,
   masterSpawn: 'Spawn1',
   masterOwner: 'ioncache',
   // maxHits: {
