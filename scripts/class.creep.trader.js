@@ -12,8 +12,17 @@ class CreepTrader extends CreepBase {
     super(role, parts);
     this.tasks = [
       'renew',
-      'trade'
+      'trade',
+      'parking'
     ];
+
+    if (!Game.creeps[this.name].memory.tradeAmount) {
+      Game.creeps[this.name].memory.tradeAmount = 0;
+    }
+
+    if (!Game.creeps[this.name].memory.tradeType) {
+      Game.creeps[this.name].memory.tradeType = null;
+    }
   }
 
   activate() {

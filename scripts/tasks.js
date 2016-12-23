@@ -1378,6 +1378,42 @@ function steal(creep) {
   return flag;
 }
 
+function trade(creep) {
+  let flag;
+
+  let currentCarry = _.sum(creep.carry);
+  // shouldn't really ever happen, but might as well catch the case
+  // where no terminal exists
+  if (!Game.rooms[creep.memory.homeRoom].terminal) {
+    flag = false;
+  } else if (
+    creep.memory.tradeType &&
+    (
+      currentCarry >= creep.carryCapacity ||
+      (
+        currentCarry > 0 &&
+        creep.memory.tradeAmount <= 0
+      )
+    )
+  ) {
+    // take current carry to the terminal
+
+    flag = true;
+  } else if (
+    creep.memory.tradeType &&
+    creep.memory.tradeAmount > 0
+  ) {
+    // fill up from the storage
+
+    flag = true;
+  } else {
+    // nothing to do
+    flag = false;
+  }
+
+  return flag;
+}
+
 function transferMasterStorage(creep) {
   let target;
   if (
@@ -1804,6 +1840,7 @@ module.exports = {
   renew: renew,
   staticHarvest: staticHarvest,
   steal: steal,
+  trade: trade,
   transfer: transfer,
   transferMasterStorage: transferMasterStorage,
   transferResources: transferResources,

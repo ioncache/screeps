@@ -308,19 +308,7 @@ class RoomManager {
             });
 
             if (belowMaxStructures.length > 0) {
-              let belowMaxStructure = _.max(belowMaxStructures, (s) => {
-                let difference = s.hitsMax - s.hits;
-
-                // walls have 300m hitsMax
-                // ramparts scale by room controller level
-                // to ensure even distribution of repairs beyond the minHit value
-                // scale the different in hitsMax to hits for ramparts by a scaling constant
-                if (s.structureType === STRUCTURE_RAMPART) {
-                  difference *= config.rampartToWallHitScale[this.room.controller.level];
-                }
-
-                return difference;
-              });
+              let belowMaxStructure = _.min(belowMaxStructures, (s) => s.hits);
               tower.repair(belowMaxStructure);
               didExtraRepair = true;
             }
