@@ -419,20 +419,20 @@ class RoomManager {
       });
 
       // filter extract sites by checking the mineral they are on
-      // and if there are ticksToRegenerationnumber currently
-      extractionSites.filter((s) => {
+      // and if there are ticksToRegeneration currently
+      extractionSites = extractionSites.filter((s) => {
         let look = this.room.lookAt(s);
-        let validMineral = true;
+        let isRegenerating = false;
         for (let i of look) {
           if (
             i.mineral &&
-            i.mineral.ticksToRegenerationnumber > 100
+            i.mineral.ticksToRegeneration > 100
           ) {
-            validMineral = false;
+            isRegenerating = true;
             break;
           }
         }
-        return validMineral;
+        return !isRegenerating;
       });
 
       this.creepConfig.miner.min = extractionSites.length;
