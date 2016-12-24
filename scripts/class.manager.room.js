@@ -418,11 +418,40 @@ class RoomManager {
         }
       });
 
+      // filter extract sites by checking the mineral they are on
+      // and if there are ticksToRegenerationnumber currently
+      extractionSites.filter((s) => {
+        let look = this.room.pos.lookAt(s);
+        let validMineral = true;
+        for (let i of look) {
+          if (
+            i.mineral &&
+            i.mineral.ticksToRegenerationnumber > 100
+          ) {
+            validMineral = false;
+            break;
+          }
+        }
+        return validMineral;
+      });
+
       this.creepConfig.miner.min = extractionSites.length;
 
       // make 1 carter for each miner
       if (this.creepConfig.carter) {
-        this.creepConfig.carter.min = this.creepConfig.miner.currentCount;
+        this.creepConfig.carter.min = this.creepConfig.miner.min;
+      }
+
+      // cull some current miners/carters if there are too many
+      let miners = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'miner' });
+      let carters = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'carter' });
+
+      if (miners.length > this.creepConfig.miner.min) {
+        miners[0].memory.task = 'recycle';
+      }
+
+      if (this.creepConfig.carter && carters.length > this.creepConfig.carter.min) {
+        carters[0].memory.task = 'recycle';
       }
     }
 
