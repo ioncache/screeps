@@ -421,7 +421,7 @@ class RoomManager {
       // filter extract sites by checking the mineral they are on
       // and if there are ticksToRegenerationnumber currently
       extractionSites.filter((s) => {
-        let look = this.room.pos.lookAt(s);
+        let look = this.room.lookAt(s);
         let validMineral = true;
         for (let i of look) {
           if (
