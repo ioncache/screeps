@@ -443,14 +443,17 @@ class RoomManager {
       }
 
       // cull some current miners/carters if there are too many
-      let miners = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'miner' });
-      let carters = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'carter' });
 
-      if (miners.length > this.creepConfig.miner.min) {
+      if (this.creepConfig.miner.currentCount > this.creepConfig.miner.min) {
+        let miners = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'miner' });
         miners[0].memory.task = 'recycle';
       }
 
-      if (this.creepConfig.carter && carters.length > this.creepConfig.carter.min) {
+      if (
+        this.creepConfig.carter &&
+        this.creepConfig.carter.currentCount > this.creepConfig.carter.min
+      ) {
+        let carters = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'carter' });
         carters[0].memory.task = 'recycle';
       }
     }
