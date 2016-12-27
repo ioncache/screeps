@@ -699,16 +699,13 @@ function harvest(creep) {
 function hunt(creep) {
   let flag;
 
-  let healBodyParts = creep.body.filter((p) => {
-    return p.type === HEAL && p.hits > 0;
-  });
-
   if (
     creep.hits < creep.hitsMax &&
-    healBodyParts.length > 0 &&
     !creep.memory.isEngaged
   ) {
     creep.heal(creep);
+  } else if (creep.hits >= creep.hitsMax) {
+    creep.memory.isEngaged = false;
   }
 
   let attackBodyParts = creep.body.filter((p) => {
@@ -728,7 +725,6 @@ function hunt(creep) {
 
     if (target) {
       if (creep.pos.getRangeTo(target) > 1) {
-        creep.memory.isEngaged = false;
         flag = actions.moveTo(creep, target, 'hunt');
       } else {
         creep.memory.isEngaged = true;
@@ -741,7 +737,6 @@ function hunt(creep) {
       });
       lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
       if (creep.pos.getRangeTo(lairs[0]) > 1) {
-        creep.memory.isEngaged = false;
         flag = actions.moveTo(creep, lairs[0], 'hunt');
       } else {
         flag = false;
