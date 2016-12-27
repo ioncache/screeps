@@ -740,7 +740,12 @@ function hunt(creep) {
         filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
       });
       lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
-      flag = actions.moveTo(creep, lairs[0], 'hunt');
+      if (creep.pos.getRangeTo(lairs[0]) > 1) {
+        creep.memory.isEngaged = false;
+        flag = actions.moveTo(creep, lairs[0], 'hunt');
+      } else {
+        flag = false;
+      }
     }
   } else if (keeperTarget) {
     flag = actions.moveTo(creep, keeperTarget, 'hunt');
@@ -859,17 +864,6 @@ function motivate(creep) {
   creep.say(strings.motivations[helpers.getRandomInt(0, strings.motivations.length - 1)], true);
 
   return false;
-}
-
-// mainly used when another move is desired directly after a previous move
-function moveTo(creep) {
-  let flag = actions.moveTo(creep, creep.memory.target, 'moveTo');
-  if (flag) {
-    creep.memory.target = null;
-    creep.memory.task = null;
-  }
-
-  return flag;
 }
 
 function parking(creep, moveOnly = false) {
