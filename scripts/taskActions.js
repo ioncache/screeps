@@ -110,7 +110,7 @@ function moveTo(creep, target, task, opts = {}) {
       flag = true;
       break;
     case OK:
-      for (let i of creep.room.pos.look()) {
+      for (let i of creep.pos.look()) {
         if (
           i.type === 'structure' &&
           i.structure.structureType === STRUCTURE_ROAD
