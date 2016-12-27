@@ -42,6 +42,13 @@ class RoomManager {
 
     if (
       this.room.memory &&
+      this.room.memory.roads !== undefined
+    ) {
+      this.room.memory.roads = {};
+    }
+
+    if (
+      this.room.memory &&
       this.room.memory.roomType &&
       config.creepConfigMaster[this.room.memory.roomType]
     ) {
@@ -443,7 +450,6 @@ class RoomManager {
       }
 
       // cull some current miners/carters if there are too many
-
       if (this.creepConfig.miner.currentCount > this.creepConfig.miner.min) {
         let miners = this.room.find(FIND_MY_CREEPS, { filter: (c) => c.memory.role === 'miner' });
         miners[0].memory.task = 'recycle';

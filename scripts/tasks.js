@@ -715,47 +715,38 @@ function hunt(creep) {
     return p.type === ATTACK && p.hits > 0;
   });
 
-  // run away to home room to heal if needed
-  if (attackBodyParts.lentgh === 0) {
-    creep.memory.isEngaged = false;
-    flag = actions.moveTo(creep, Game.rooms[creep.memory.homeRoom].controller, 'raid');
-  } else {
-    let keeperTarget = Game.flags[creep.memory.keeperTarget];
+  let keeperTarget = Game.flags[creep.memory.keeperTarget];
 
-    if (
-      keeperTarget &&
-      keeperTarget.room &&
-      keeperTarget.room.name === creep.room.name
-    ) {
-      let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
-        filter: (c) => c.room.name === creep.room.name
-      });
+  if (
+    keeperTarget &&
+    keeperTarget.room &&
+    keeperTarget.room.name === creep.room.name
+  ) {
+    let target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+      filter: (c) => c.room.name === creep.room.name
+    });
 
-      if (target) {
-        if (creep.pos.getRangeTo(target) > 1) {
-          flag = actions.moveTo(creep, target, 'hunt');
-        } else {
-          // if our next attack will kill the keeperTarget
-          // set isEngaged to false
-          if (target.hits <= attackBodyParts.length * 30) {
-            creep.memory.isEngaged = false;
-          } else {
-            creep.memory.isEngaged = true;
-          }
-          flag = actions.attack(creep, target, 'hunt');
-        }
+    if (target) {
+      if (creep.pos.getRangeTo(target) > 1) {
+        creep.memory.isEngaged = false;
+        flag = actions.moveTo(creep, target, 'hunt');
       } else {
-        let lairs = creep.room.find(FIND_STRUCTURES, {
-          filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
-        });
-        lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
-        flag = actions.moveTo(creep, lairs[0], 'hunt');
+        creep.memory.isEngaged = true;
+        flag = actions.attack(creep, target, 'hunt');
       }
-    } else if (keeperTarget) {
-      flag = actions.moveTo(creep, keeperTarget, 'hunt');
-    } else { // do nothing if there is no current keeper target set
-      flag = false;
+    } else {
+      creep.memory.isEngaged = false;
+      let lairs = creep.room.find(FIND_STRUCTURES, {
+        filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
+      });
+      lairs.sort((a, b) => a.ticksToSpawn - b.ticksToSpawn);
+      flag = actions.moveTo(creep, lairs[0], 'hunt');
     }
+  } else if (keeperTarget) {
+    flag = actions.moveTo(creep, keeperTarget, 'hunt');
+  } else { // do nothing if there is no current keeper target set
+    creep.memory.isEngaged = false;
+    flag = false;
   }
 
   return flag;
