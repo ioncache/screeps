@@ -98,7 +98,7 @@ class RoomManager {
       //   number of couriers
       //   number of bankers/suppliers
       // - number of energizers
-      // - types of builders
+      // - number of builders
       // - number of fixers based on towers
       this.managePopulation();
 

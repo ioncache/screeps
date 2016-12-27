@@ -146,8 +146,9 @@ function getTarget(creep, type, opts = {}) {
       break;
 
     case 'droppedResource':
-      let droppedResource = Game.rooms[targetRoom].find(
-        FIND_DROPPED_ENERGY,
+      // priortize resources over energy
+      let droppedResource = Game.rooms[targetRoom].findClosestByRange(
+        FIND_DROPPED_RESOURCES,
         {
           filter: (i) => {
             return i.room.name === targetRoom;
@@ -155,12 +156,23 @@ function getTarget(creep, type, opts = {}) {
         }
       );
 
-      if (droppedResource.length > 0) {
-        droppedResource.sort((a, b) => {
-          return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
-        });
-        target = droppedResource[0].id;
+      if (droppedResource) {
+        target = droppedResource.id;
+      } else {
+        droppedResource = Game.rooms[targetRoom].findClosestByRange(
+          FIND_DROPPED_ENERGY,
+          {
+            filter: (i) => {
+              return i.room.name === targetRoom;
+            }
+          }
+        );
+
+        if (droppedResource) {
+          target = droppedResource.id;
+        }
       }
+
       break;
 
     // an energyHolder is a structure for creeps to transfer energy to
