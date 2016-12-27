@@ -42,7 +42,7 @@ class RoomManager {
 
     if (
       this.room.memory &&
-      this.room.memory.roads !== undefined
+      this.room.memory.roads === undefined
     ) {
       this.room.memory.roads = {};
     }
