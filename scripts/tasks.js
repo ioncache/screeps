@@ -704,8 +704,7 @@ function hunt(creep) {
     !creep.memory.isEngaged
   ) {
     creep.heal(creep);
-  } else if (creep.hits >= creep.hitsMax) {
-    creep.memory.isEngaged = false;
+    return false;
   }
 
   let attackBodyParts = creep.body.filter((p) => {
@@ -725,12 +724,14 @@ function hunt(creep) {
 
     if (target) {
       if (creep.pos.getRangeTo(target) > 1) {
+        creep.memory.isEngaged = false;
         flag = actions.moveTo(creep, target, 'hunt');
       } else {
         creep.memory.isEngaged = true;
         flag = actions.attack(creep, target, 'hunt');
       }
     } else {
+      creep.memory.isEngaged = false;
       let lairs = creep.room.find(FIND_STRUCTURES, {
         filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
       });
