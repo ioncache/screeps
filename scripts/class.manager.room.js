@@ -59,6 +59,7 @@ class RoomManager {
 
   manage() {
     this.room = Game.rooms[this.roomName];
+    this.room.memory.currentTimestamp = new Date().getTime();
 
     if (this.active) {
       // keep local creep list in sync
@@ -212,20 +213,17 @@ class RoomManager {
       filter: (c) => c.body.some((p) => dangerousParts.includes(p.type))
     });
 
-    let currentDate = new Date();
-    let currentTimestamp = currentDate.getTime();
-
     if (
       allHostileCreeps.length > 0 &&
       (
         !this.room.memory.lastHostileTimestamp ||
-        currentTimestamp - this.room.memory.lastHostileTimestamp > config.roomHostileNotifyTimeout
+        this.room.memory.currentTimestamp - this.room.memory.lastHostileTimestamp > config.roomHostileNotifyTimeout
       )
     ) {
       let message = `Room ${this.room.name} is getting attacked by ${allHostileCreeps.length} `;
-      message += `creep${allHostileCreeps.length > 1 ? 's' : ''} at ${currentDate}`;
+      message += `creep${allHostileCreeps.length > 1 ? 's' : ''} at ${new Date(this.room.memory.currentTimestamp)}`;
       Game.notify(message);
-      this.room.memory.lastHostileTimestamp = currentTimestamp;
+      this.room.memory.lastHostileTimestamp = this.room.memory.currentTimestamp;
     }
 
     let possibleHostileTargets = [];
@@ -279,6 +277,9 @@ class RoomManager {
         if (woundedCreep) {
           tower.heal(woundedCreep);
         } else if (tower.energy > tower.energyCapacity * 0.75) { // always keep energy for shooting
+          // TODO only repair roads that have been walked on recently
+          //      for some value of recently
+          //      check the room.memory.roads[road.id].lastWalkedOn timestamp
           let allDamagedStructures = tower.room.find(
             FIND_STRUCTURES,
             {
@@ -302,7 +303,7 @@ class RoomManager {
             let repairTarget = allDamagedStructures[0];
             tower.repair(repairTarget);
           } else if (
-            currentTimestamp - this.room.memory.lastRepairTimestamp >= config.roomLastRepairTimeout
+            this.room.memory.currentTimestamp - this.room.memory.lastRepairTimestamp >= config.roomLastRepairTimeout
           ) {
             let belowMaxStructures = tower.room.find(FIND_STRUCTURES,{
               filter: (s) => {
@@ -327,7 +328,7 @@ class RoomManager {
     // only set lastRepairTimestamp after all towers have been processed
     // that way each can do the more than minHit repair in a turn
     if (didExtraRepair) {
-      this.room.memory.lastRepairTimestamp = currentTimestamp;
+      this.room.memory.lastRepairTimestamp = this.room.memory.currentTimestamp;
     }
 
     if (possibleHostileTargets.length > 0) {

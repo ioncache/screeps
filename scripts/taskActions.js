@@ -118,7 +118,8 @@ function moveTo(creep, target, task, opts = {}) {
           if (creep.room.memory.roads[i.structure.id] === undefined) {
             creep.room.memory.roads[i.structure.id] = {};
           }
-          creep.room.memory.roads[i.structure.id].lastWalkedOn = new Date().getTime();
+          creep.room.memory.roads[i.structure.id].lastWalkedOn =
+            Game.rooms[creep.memory.homeRoom].memory.currentTimestamp;
         }
       }
       flag = true;
