@@ -731,7 +731,6 @@ function hunt(creep) {
         flag = actions.attack(creep, target, 'hunt');
       }
     } else {
-      creep.memory.isEngaged = false;
       let lairs = creep.room.find(FIND_STRUCTURES, {
         filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR
       });
