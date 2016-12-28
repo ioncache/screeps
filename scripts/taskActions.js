@@ -132,7 +132,7 @@ function moveTo(creep, target, task, opts = {}) {
   return flag;
 }
 
-function transfer(creep, target, task, type = RESOURCE_ENERGY) {
+function transfer(creep, target, task, type = RESOURCE_ENERGY, okCb) {
   let flag;
 
   let result = creep.transfer(target, type);
@@ -162,6 +162,9 @@ function transfer(creep, target, task, type = RESOURCE_ENERGY) {
       break;
     case OK:
       log.info(`${task}: transferring to structure`);
+      if (typeof okCb === 'function') {
+        okCb();
+      }
       // reset task now if creep is out of energy after transfer
       if (creep.carry[type] === 0) {
         creep.memory.target = null;

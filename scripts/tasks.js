@@ -1100,6 +1100,7 @@ function remoteHarvest(creep) {
 
 // TODO: need to update renew task so that creeps can determine distance to
 //       spawn and how long they need to get there before renewal
+// TODO: update so that creeps can renew from other spawns if current is busy
 function renew(creep, nextTask, maxTicksToLive = 750) {
   let flag;
 
@@ -1383,7 +1384,7 @@ function trade(creep) {
     // take current carry to the terminal
     flag = actions.transfer(
       creep,
-      Game.getObjectById(Game.rooms[creep.memory.homeRoom].terminal),
+      Game.rooms[creep.memory.homeRoom].terminal,
       'trade',
       creep.memory.tradeType,
       () => {
@@ -1397,7 +1398,7 @@ function trade(creep) {
     // fill up from the storage
     flag = actions.withdraw(
       creep,
-      Game.getObjectById(Game.rooms[creep.memory.homeRoom].storage),
+      Game.rooms[creep.memory.homeRoom].storage,
       'trade',
       creep.memory.tradeType,
       true
