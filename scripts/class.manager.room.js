@@ -277,9 +277,6 @@ class RoomManager {
         if (woundedCreep) {
           tower.heal(woundedCreep);
         } else if (tower.energy > tower.energyCapacity * 0.75) { // always keep energy for shooting
-          // TODO only repair roads that have been walked on recently
-          //      for some value of recently
-          //      check the room.memory.roads[road.id].lastWalkedOn timestamp
           let allDamagedStructures = tower.room.find(
             FIND_STRUCTURES,
             {
@@ -287,6 +284,24 @@ class RoomManager {
                 if (config.minHits[s.structureType]) {
                   return s.hits < config.minHits[s.structureType](tower.room);
                 } else {
+                  // skip repairing roads that haven't been walked on in a long time
+                  if (
+                    s.structureType === STRUCTURE_ROAD &&
+                    (
+                      this.room.memory.roads[s.id] === undefined ||
+                      this.room.memory.currentTimestamp - this.room.memory.roads[s.id].lastWalkedOn > 86400000
+                    )
+                  ) {
+                    // once a road has not been walked on in a long time, delete it
+                    // from the road memory, so that when it decays, there isn't an
+                    // oprhan road still in the memory store
+                    // if a creep walks on the road before it decays, the road will
+                    // get added back into memory with a new lastWalkedOn timestamp
+                    if (this.room.memory.roads[s.id] !== undefined) {
+                      delete this.room.memory.roads[s.id];
+                    }
+                    return false;
+                  }
                   return (s.hitsMax - s.hits) >= helpers.calculateTowerEffectiveness('repair', tower.pos.getRangeTo(s));
                 }
               }
