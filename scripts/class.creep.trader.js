@@ -15,18 +15,24 @@ class CreepTrader extends CreepBase {
       'trade',
       'parking'
     ];
-
-    if (!Game.creeps[this.name].memory.tradeAmount) {
-      Game.creeps[this.name].memory.tradeAmount = 0;
-    }
-
-    if (!Game.creeps[this.name].memory.tradeType) {
-      Game.creeps[this.name].memory.tradeType = null;
-    }
   }
 
   activate() {
     let creep = Game.creeps[this.name];
+
+    if (
+      creep.memory &&
+      !creep.memory.tradeAmount
+    ) {
+      creep.memory.tradeAmount = 0;
+    }
+
+    if (
+      creep.memory &&
+      !creep.memory.tradeType
+    ) {
+      creep.memory.tradeType = null;
+    }
 
     log.start(creep.name, `lugging minerals... golly why me?`);
 
