@@ -195,6 +195,7 @@ let titles = {
   staticHarvester: 'Stockpiler',
   supplier: 'Provisioner',
   thief: 'Burglar',
+  trader: 'Entrepreneur',
   upgrader: 'Enhancer'
 };
 
