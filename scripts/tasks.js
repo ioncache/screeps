@@ -1358,6 +1358,9 @@ function steal(creep) {
   return flag;
 }
 
+// task for transferring resources from the storage to a terminal
+// manuall set creep.memory.tradeType and creep.memory.tradeAmount
+// tradeType is one of the RESOURCE_* constants
 function trade(creep) {
   let flag;
 
@@ -1368,24 +1371,37 @@ function trade(creep) {
     flag = false;
   } else if (
     creep.memory.tradeType &&
+    creep.memory.tradeAmount > 0 &&
     (
       currentCarry >= creep.carryCapacity ||
       (
         currentCarry > 0 &&
-        creep.memory.tradeAmount <= 0
+        creep.memory.tradeAmount - currentCarry <= 0
       )
     )
   ) {
     // take current carry to the terminal
-
-    flag = true;
+    flag = actions.transfer(
+      creep,
+      Game.getObjectById(Game.rooms[creep.memory.homeRoom].terminal),
+      'trade',
+      creep.memory.tradeType,
+      () => {
+        creep.memory.tradeAmount -= currentCarry;
+      }
+    );
   } else if (
     creep.memory.tradeType &&
     creep.memory.tradeAmount > 0
   ) {
     // fill up from the storage
-
-    flag = true;
+    flag = actions.withdraw(
+      creep,
+      Game.getObjectById(Game.rooms[creep.memory.homeRoom].storage),
+      'trade',
+      creep.memory.tradeType,
+      true
+    );
   } else {
     // nothing to do
     flag = false;

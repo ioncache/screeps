@@ -66,6 +66,19 @@ function findPositionNearSpawn(creep) {
   return target;
 }
 
+// TODO: generate a random or incremental # as name if all names are currently taken for the role requested
+function generateName(role = 'harvester') {
+  let title = strings.titles[role] || role;
+
+  let currentNames = Object.keys(Game.creeps);
+  let name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
+  while (currentNames.includes(name)) {
+    name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
+  }
+
+  return name;
+}
+
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -500,17 +513,23 @@ function moveTowardsParking(creep) {
   log.info(`moving away from source`);
 }
 
-// TODO: generate a random or incremental # as name if all names are currently taken for the role requested
-function generateName(role = 'harvester') {
-  let title = strings.titles[role] || role;
+function romanize(num) {
+    if (!+num) {
+      return false;
+    }
 
-  let currentNames = Object.keys(Game.creeps);
-  let name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
-  while (currentNames.includes(name)) {
-    name = `${title}_${strings.names[getRandomInt(0, strings.names.length - 1)]}`;
-  }
+    let digits = String(+num).split("");
+    let key = ["","C","CC","CCC","CD","D","DC","DCC","DCCC","CM",
+               "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC",
+               "","I","II","III","IV","V","VI","VII","VIII","IX"];
+    let roman = "";
+    let i = 3;
 
-  return name;
+    while (i--) {
+      roman = (key[+digits.pop() + (i * 10)] || "") + roman;
+    }
+
+    return Array(+digits.join("") + 1).join("M") + roman;
 }
 
 module.exports = {

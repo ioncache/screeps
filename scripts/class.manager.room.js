@@ -23,6 +23,7 @@ let classes = {
   staticHarvester: require('class.creep.staticHarvester'),
   supplier: require('class.creep.supplier'),
   thief: require('class.creep.thief'),
+  trader: require('class.creep.trader'),
   upgrader: require('class.creep.upgrader')
 };
 

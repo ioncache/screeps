@@ -89,6 +89,11 @@ module.exports = {
         min: 0,
         priority: 30
       },
+      trader: {
+        class: 'trader',
+        min: 0,
+        priority: 50
+      },
       upgrader: {
         class: 'upgrader',
         min: 3,
